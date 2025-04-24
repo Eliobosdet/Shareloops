@@ -23,5 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^(home/)?$', views.home, name='home'),  
     path('login/', views.login, name='login'), 
-    path('singup/', views.signup, name='signup') 
+    path('register/', views.register, name='register') 
 ]

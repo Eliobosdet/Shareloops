@@ -9,6 +9,6 @@ def login(request, *args, **kwargs):
     tmp_name = "login.html"
     return render(request, tmp_name)
 
-def signup(request, *args, **kwargs):
-    tmp_name = "signup.html"
+def register(request, *args, **kwargs):
+    tmp_name = "register.html"
     return render(request, tmp_name)
