@@ -1,0 +1,37 @@
+{% extends "base.html"%}
+
+{% load crispy_forms_tags %}
+{% block title %}
+    Profile
+{% endblock %}
+
+{% block content %}
+  <h1>Profilo di {{ user.username }}</h1>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <h2>Modifica dati</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ update_form.as_p }}
+    <button type="submit" name="update_profile" class="btn btn-primary">Aggiorna profilo</button>
+  </form>
+
+  <hr>
+
+  <h2>Cambia password</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ password_form.as_p }}
+    <button type="submit" name="change_password" class="btn btn-warning">Cambia password</button>
+  </form>
+
+  <div class="container text-center mt-3">
+    <a href="{% url 'home' %}" class="btn btn-secondary">Torna alla home</a>
+  </div>
+
+{% endblock %}
