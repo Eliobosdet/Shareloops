@@ -28,6 +28,7 @@
                             {% comment %} <a class="nav-link" href="{% url 'logout' %}">Logout</a> {% endcomment %}
                             <a class="nav-link" href="">Logout</a>
                         </li>
+                        
                     {% else %}
                         <li class="nav-item mx-auto">
                             <a class="nav-link" href="{% url 'login' %}">Login</a>
@@ -38,12 +39,14 @@
                             {% comment %} <a class="nav-link" href="">Sign Up</a> {% endcomment %}
                         </li>
                     {% endif %}
+                </ul>
                 {% comment %} <form class="d-flex" role="search">
                   <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
                   <button class="btn btn-outline-success" type="submit">Search</button>
                 </form> {% endcomment %}
               </div>
             </div>
-          </nav>
+        </nav>
+        <h1 class="text-center mt-5">Welcome {{user.name}}</h1>
     </div>
 {% endblock %}
