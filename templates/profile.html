@@ -6,6 +6,7 @@
 {% endblock %}
 
 {% block content %}
+  {{ block.super }}
   <h1>Profilo di {{ user.username }}</h1>
 
   {% if messages %}
