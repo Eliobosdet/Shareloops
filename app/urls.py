@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, re_path
 from django.http import HttpResponse
+from django.conf import settings
+from django.conf.urls.static import static
 from app import views
 
 urlpatterns = [
@@ -26,4 +28,8 @@ urlpatterns = [
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
     path('profile/<int:pk>/', views.UserDetailView.as_view(), name='profile'),
-]
+    path('uploadloop/', views.upload_loop, name='uploadloop'),
+    path('loops/', views.LoopsListView.as_view(), name='loops_list'),
+    # path('loop/<int:pk>/', views.LoopDetailView.as_view(), name='loop_detail'),
+    # path('loop/<int:pk>/edit/', views.LoopUpdateView.as_view(), name='loop_edit'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

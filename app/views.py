@@ -1,11 +1,12 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import CustomRegisterForm, CustomLoginForm, UserUpdateForm
+from django.views.generic import DetailView, ListView
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
-from django.views.generic import DetailView
+from django.contrib.auth.decorators import login_required
+from .forms import *
 import logging
 # from django.contrib.auth.forms import AuthenticationForm
 
@@ -23,7 +24,7 @@ def register_view(request, *args, **kwargs):
             return redirect('home')
     else:
         form = CustomRegisterForm()
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'auth/register.html', {'form': form})
 
 def login_view(request, *args, **kwargs):
     if request.method == 'POST':
@@ -40,7 +41,7 @@ def login_view(request, *args, **kwargs):
             logger.warning(f"Login form invalid: {form.errors}")
     else:
         form = CustomLoginForm()
-    return render(request, 'login.html', {'form': form})
+    return render(request, 'auth/login.html', {'form': form})
 
 
 def logout_view(request, *args, **kwargs):
@@ -49,19 +50,17 @@ def logout_view(request, *args, **kwargs):
 
 def profile_view(request, *args, **kwargs):
     if request.user.is_authenticated:
-        return render(request, 'profile.html', {'user': request.user})
+        return render(request, 'user/profile.html', {'user': request.user})
     else:
         return redirect('login')
 
 class UserDetailView(DetailView):
     model = User # Model to be used for the view
-    template_name = 'profile.html' 
+    template_name = 'user/profile.html'
     context_object_name = 'user' # Name of the context variable to be used in the template
 
     def get_object(self, queryset=None):
         obj = get_object_or_404(User, pk=self.kwargs['pk'])
-        if obj != self.request.user:
-            raise Http404("Non puoi accedere al profilo di un altro utente.")
         return obj
 
     def get_context_data(self, **kwargs):
@@ -78,7 +77,7 @@ class UserDetailView(DetailView):
             if update_form.is_valid():
                 update_form.save()
                 messages.success(request, 'Profilo aggiornato con successo!')
-                return redirect('profile', pk=request.user.pk)
+                return redirect('user/profile', pk=request.user.pk)
             else:
                 password_form = PasswordChangeForm(request.user)
         elif 'change_password' in request.POST:
@@ -87,7 +86,7 @@ class UserDetailView(DetailView):
                 user = password_form.save()
                 update_session_auth_hash(request, user)
                 messages.success(request, 'Password cambiata con successo!')
-                return redirect('profile', pk=request.user.pk)
+                return redirect('user/profile', pk=request.user.pk)
             else:
                 update_form = UserUpdateForm(instance=request.user)
         else:
@@ -98,3 +97,25 @@ class UserDetailView(DetailView):
         context['update_form'] = update_form
         context['password_form'] = password_form
         return self.render_to_response(context)
+    
+class LoopsListView(ListView):
+    model = Loop
+    template_name = 'loops.html'
+    context_object_name = 'loops'
+
+    # def get_queryset(self):
+    #     return Loop.objects.filter(user=self.request.user)
+    
+@login_required
+def upload_loop(request):
+    if request.method == 'POST':
+        form = LoopForm(request.POST, request.FILES)
+        if form.is_valid():
+            loop = form.save(commit=False)
+            loop.user = request.user
+            loop.save()
+            messages.success(request, 'Loop uploaded successfully!')
+            return redirect('home')
+    else:
+        form = LoopForm()
+    return render(request, 'user/upload_loop.html', {'form': form})

@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from .models import *
 # from crispy_forms.helper import FormHelper
 # from crispy_forms.layout import Layout, Row, Column, Submit
 
@@ -73,3 +74,9 @@ class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
+
+class LoopForm(forms.ModelForm):
+    class Meta:
+        model = Loop
+        fields = ['title', 'description', 'audio_file', 'tags', 'bpm', 'key', 'time_signature', 'genre', 'cover_image']
+
