@@ -8,6 +8,8 @@ django = "*"
 django-crispy-forms = "*"
 crispy-bootstrap5 = "*"
 pillow = "*"
+libmagic = "*"
+python-magic-bin = "*"
 
 [dev-packages]
 

@@ -6,8 +6,9 @@
   <h1>Loops</h1>
   <ul>
     {% for loop in loops %}
-    <li>
-      <img src="{{ loop.cover_image }}" alt="(Loop Image)" width="100" height="100" />
+    <li class="mb-4 border p-3 shadow-sm bg-light">
+      {% comment %} <a href="{% url 'loop_detail' loop.id %}"> {% endcomment %}
+      <img src="{{ loop.cover_image.url }}" alt="(Loop Image)" width="100" height="100" />
       <h4>{{ loop.title }}</h2>
       <p>{{ loop.description }}</p>
         <p>Uploaded by: {{ loop.user.username }}</p>

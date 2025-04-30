@@ -1,7 +1,7 @@
+import os, magic
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-import os
 
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
@@ -23,22 +23,74 @@ def validate_cover_size(value):
     if value.size > max_size:
         raise ValidationError('The cover image cannot exceed 2MB.')
 
+def user_directory_path(instance, filename, subfolder):
+    # Costruisce il percorso: media/users/<user_id>/<subfolder>/<filename>
+    return f'users/{instance.user.id}/{subfolder}/{filename}'
+
+def loop_audio_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'loops/audio')
+
+def loop_cover_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'loops/covers')
+
 class Loop(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='loops')
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     audio_file = models.FileField(
-        upload_to='loops/',
+        upload_to=loop_audio_upload_path,
         validators=[validate_audio_extension, validate_file_size]
     )
-    tags = models.CharField(max_length=255, help_text="Separate tags with commas")
-    bpm = models.PositiveIntegerField(blank=True, null=True, help_text="Example: 120, 140")
-    key = models.CharField(max_length=10, blank=True, null=True, help_text="Example: C, Dm")
-    time_signature = models.CharField(max_length=10, blank=True, null=True, help_text="Example: 4/4, 3/4")
-    genre = models.CharField(max_length=100)
     cover_image = models.ImageField(
-        upload_to='loop_covers/',
+        upload_to=loop_cover_upload_path,
         validators=[validate_image_extension, validate_cover_size]
+    )
+    key = models.CharField(max_length=10, blank=True, null=True, help_text="Example: C, Dm")
+    bpm = models.PositiveIntegerField(blank=True, null=True, help_text="Example: 120, 140")
+    tags = models.CharField(max_length=255, blank=True, null=True, help_text="Separate tags with commas")
+    genre = models.CharField(max_length=100, blank=True, null=True)
+    time_signature = models.CharField(max_length=10, blank=True, null=True, help_text="Example: 4/4, 3/4")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} by {self.user.username}"
+
+def validate_zip_file(file):
+    # Controllo estensione
+    if not file.name.endswith('.zip'):
+        raise ValidationError("Il file deve avere estensione .zip.")
+
+    # Controllo MIME type reale (non solo estensione)
+    mime = magic.from_buffer(file.read(2048), mime=True)
+    file.seek(0)  # Torna all’inizio per evitare problemi in seguito
+
+    if mime != 'application/zip':
+        raise ValidationError("Il file caricato non è un file ZIP valido.")
+    
+def samplepack_zip_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'samplepacks/zips')
+
+def samplepack_cover_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'samplepacks/image_covers')
+
+def samplepack_preview_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'samplepacks/preview')
+
+class SamplePack(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='samplepacks')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    zip_file = models.FileField(
+        upload_to=samplepack_zip_upload_path,
+        validators=[validate_zip_file]
+    )
+    cover_image = models.ImageField(
+        upload_to=samplepack_cover_upload_path,
+        validators=[validate_image_extension, validate_cover_size]
+    )
+    preview_audio = models.FileField(
+        upload_to=samplepack_preview_upload_path,
+        validators=[validate_audio_extension, validate_file_size]
     )
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
