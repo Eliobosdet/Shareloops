@@ -18,7 +18,7 @@ def validate_file_size(value):
     if value.size > max_size:
         raise ValidationError('The audio file cannot exceed 10MB.')
 
-def validate_cover_size(value):
+def validate_coverimage_size(value):
     max_size = 2 * 1024 * 1024  # 2 MB
     if value.size > max_size:
         raise ValidationError('The cover image cannot exceed 2MB.')
@@ -43,7 +43,7 @@ class Loop(models.Model):
     )
     cover_image = models.ImageField(
         upload_to=loop_cover_upload_path,
-        validators=[validate_image_extension, validate_cover_size]
+        validators=[validate_image_extension, validate_coverimage_size]
     )
     key = models.CharField(max_length=10, blank=True, null=True, help_text="Example: C, Dm")
     bpm = models.PositiveIntegerField(blank=True, null=True, help_text="Example: 120, 140")
@@ -86,7 +86,7 @@ class SamplePack(models.Model):
     )
     cover_image = models.ImageField(
         upload_to=samplepack_cover_upload_path,
-        validators=[validate_image_extension, validate_cover_size]
+        validators=[validate_image_extension, validate_coverimage_size]
     )
     preview_audio = models.FileField(
         upload_to=samplepack_preview_upload_path,
@@ -96,3 +96,13 @@ class SamplePack(models.Model):
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
+
+def profileimage_upload_path(instance, filename):
+    return user_directory_path(instance, filename, 'profile_image')
+
+class ProfileImage(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    image = models.ImageField(
+        upload_to=profileimage_upload_path, 
+        validators=[validate_image_extension, validate_coverimage_size]
+    )

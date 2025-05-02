@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='loop',
             name='cover_image',
-            field=models.ImageField(upload_to=app.models.loop_cover_upload_path, validators=[app.models.validate_image_extension, app.models.validate_cover_size]),
+            field=models.ImageField(upload_to=app.models.loop_cover_upload_path, validators=[app.models.validate_image_extension, app.models.validate_coverimage_size]),
         ),
         migrations.AlterField(
             model_name='loop',
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('title', models.CharField(max_length=255)),
                 ('description', models.TextField(blank=True, null=True)),
                 ('zip_file', models.FileField(upload_to=app.models.samplepack_zip_upload_path, validators=[app.models.validate_zip_file])),
-                ('cover_image', models.ImageField(upload_to=app.models.samplepack_cover_upload_path, validators=[app.models.validate_image_extension, app.models.validate_cover_size])),
+                ('cover_image', models.ImageField(upload_to=app.models.samplepack_cover_upload_path, validators=[app.models.validate_image_extension, app.models.validate_coverimage_size])),
                 ('preview_audio', models.FileField(upload_to=app.models.samplepack_preview_upload_path, validators=[app.models.validate_audio_extension, app.models.validate_file_size])),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='samplepacks', to=settings.AUTH_USER_MODEL)),

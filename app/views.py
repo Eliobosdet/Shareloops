@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, UpdateView
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
@@ -54,58 +54,23 @@ def profile_view(request, *args, **kwargs):
     else:
         return redirect('login')
 
-class UserDetailView(DetailView):
-    model = User # Model to be used for the view
+class ProfileDetailView(DetailView):
+    model = User
     template_name = 'user/profile.html'
-    context_object_name = 'user' # Name of the context variable to be used in the template
+    context_object_name = 'user'
 
     def get_object(self, queryset=None):
-        obj = get_object_or_404(User, pk=self.kwargs['pk'])
+        # Recupera l'utente in base alla pk e verifica che corrisponda all'utente loggato
+        obj = super().get_object(queryset)
+        if obj.pk != self.request.user.pk:
+            raise HttpResponseForbidden("Non hai il permesso di accedere a questa pagina.")
         return obj
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['password_form'] = PasswordChangeForm(self.request.user)
-        context['update_form'] = UserUpdateForm(instance=self.request.user)
-        return context
-    
-    def post(self, request, *args, **kwargs):
-        self.object = self.get_object()
-
-        if 'update_profile' in request.POST:
-            update_form = UserUpdateForm(request.POST, instance=request.user)
-            if update_form.is_valid():
-                update_form.save()
-                messages.success(request, 'Profilo aggiornato con successo!')
-                return redirect('user/profile', pk=request.user.pk)
-            else:
-                password_form = PasswordChangeForm(request.user)
-        elif 'change_password' in request.POST:
-            password_form = PasswordChangeForm(request.user, request.POST)
-            if password_form.is_valid():
-                user = password_form.save()
-                update_session_auth_hash(request, user)
-                messages.success(request, 'Password cambiata con successo!')
-                return redirect('user/profile', pk=request.user.pk)
-            else:
-                update_form = UserUpdateForm(instance=request.user)
-        else:
-            update_form = UserUpdateForm(instance=request.user)
-            password_form = PasswordChangeForm(request.user)
-
-        context = self.get_context_data()
-        context['update_form'] = update_form
-        context['password_form'] = password_form
-        return self.render_to_response(context)
-    
+   
 class LoopsListView(ListView):
     model = Loop
     template_name = 'loops.html'
     context_object_name = 'loops'
 
-    # def get_queryset(self):
-    #     return Loop.objects.filter(user=self.request.user)
-    
 @login_required
 def upload_loop(request):
     if request.method == 'POST':

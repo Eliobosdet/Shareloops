@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ('key', models.CharField(blank=True, max_length=10, null=True)),
                 ('main_instrument', models.CharField(blank=True, max_length=100, null=True)),
                 ('genre', models.CharField(max_length=100)),
-                ('cover_image', models.ImageField(upload_to='loop_covers/', validators=[app.models.validate_image_extension, app.models.validate_cover_size])),
+                ('cover_image', models.ImageField(upload_to='loop_covers/', validators=[app.models.validate_image_extension, app.models.validate_coverimage_size])),
                 ('uploaded_at', models.DateTimeField(auto_now_add=True)),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='loops', to=settings.AUTH_USER_MODEL)),
             ],

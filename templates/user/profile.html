@@ -15,21 +15,26 @@
     {% endfor %}
   {% endif %}
 
-  <h2>Modifica dati</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ update_form.as_p }}
-    <button type="submit" name="update_profile" class="btn btn-primary">Aggiorna profilo</button>
-  </form>
+  <h2>I tuoi dati</h2>
+  <p><strong>Nome utente:</strong> {{ user.username }}</p>
+  <p><strong>Email:</strong> {{ user.email }}</p>
+  <p><strong>Nome:</strong> {{ user.first_name }}</p>
+  <p><strong>Cognome:</strong> {{ user.last_name }}</p>
+  <p><strong>Data di registrazione:</strong> {{ user.date_joined }}</p>
+  <p><strong>Ultimo accesso:</strong> {{ user.last_login }}</p>
+  <p><strong>Immagine del profilo:</strong></p>
+  {% if user.imageprofile.image %}
+    <img src="{{ user.imageprofile.image.url }}" alt="Immagine del profilo" class="img-thumbnail" style="max-width: 200px;">
+  {% else %}
+    {{user.imageprofile.image}}
+  {% endif %}
+
+
+  <div class="container text-center mt-3">
+    <a href="" class="btn btn-primary">Modifica profilo</a>
+  </div>
 
   <hr>
-
-  <h2>Cambia password</h2>
-  <form method="post">
-    {% csrf_token %}
-    {{ password_form.as_p }}
-    <button type="submit" name="change_password" class="btn btn-warning">Cambia password</button>
-  </form>
 
   <div class="container text-center mt-3">
     <a href="{% url 'home' %}" class="btn btn-secondary">Torna alla home</a>

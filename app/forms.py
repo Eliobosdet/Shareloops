@@ -75,6 +75,11 @@ class UserUpdateForm(forms.ModelForm):
         model = User
         fields = ['first_name', 'last_name', 'email']
 
+class ProfileImageUpdateForm(forms.ModelForm):
+    class Meta:
+        model = ProfileImage
+        fields = ['image']
+
 class LoopForm(forms.ModelForm):
     class Meta:
         model = Loop
