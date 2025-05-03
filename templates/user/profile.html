@@ -5,39 +5,55 @@
     Profile
 {% endblock %}
 
+
 {% block content %}
-  {{ block.super }}
-  <h1>Profilo di {{ user.username }}</h1>
+<div class="container mt-5">
+    <div class="row align-items-center">
+        <!-- Colonna per l'immagine del profilo -->
+        <div class="col-md-4 text-center">
+            {% if profImg and profImg.image %}
+                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+            {% else %}
+                <img src="{{ MEDIA_URL }}defaultProfileImage.jpg" alt="Immagine predefinita" class="rounded-circle img-fluid" style="max-width: 200px;">
+            {% endif %}
+        </div>
 
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-success">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
+        <!-- Colonna per i dettagli del profilo -->
+        <div class="col-md-8">
+            <h1 class="fw-bold">{{ user.username }}</h1>
+            <h4 class="text-muted">{{ user.first_name }} {{ user.last_name }}</h4>
+            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> Maranello, Italy</p>
+            <hr>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Data di registrazione:</strong> {{ user.date_joined|date:"d M Y" }}</p>
+            <p><strong>Ultimo accesso:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
+            <div class="mt-3">
+                <a href="#" class="btn btn-primary">Modifica profilo</a>
+                <a href="{% url 'home' %}" class="btn btn-secondary">Torna alla home</a>
+            </div>
+        </div>
+    </div>
+    
+    <hr class="my-4">
 
-  <h2>I tuoi dati</h2>
-  <p><strong>Nome utente:</strong> {{ user.username }}</p>
-  <p><strong>Email:</strong> {{ user.email }}</p>
-  <p><strong>Nome:</strong> {{ user.first_name }}</p>
-  <p><strong>Cognome:</strong> {{ user.last_name }}</p>
-  <p><strong>Data di registrazione:</strong> {{ user.date_joined }}</p>
-  <p><strong>Ultimo accesso:</strong> {{ user.last_login }}</p>
-  <p><strong>Immagine del profilo:</strong></p>
-  {% if user.imageprofile.image %}
-    <img src="{{ user.imageprofile.image.url }}" alt="Immagine del profilo" class="img-thumbnail" style="max-width: 200px;">
-  {% else %}
-    {{user.imageprofile.image}}
-  {% endif %}
-
-
-  <div class="container text-center mt-3">
-    <a href="" class="btn btn-primary">Modifica profilo</a>
-  </div>
-
-  <hr>
-
-  <div class="container text-center mt-3">
-    <a href="{% url 'home' %}" class="btn btn-secondary">Torna alla home</a>
-  </div>
-
+    <div class="row">
+      <div class="col-md-12">
+          <h2 class="fw-bold">Loops caricati</h2>
+          <ul class="list-group">
+            {% for loop in loops %}
+            <li class="mb-4 border p-3 shadow-sm bg-light">
+              {% comment %} <a href="{% url 'loop_detail' loop.id %}"> {% endcomment %}
+              <img src="{{ loop.cover_image.url }}" alt="(Loop Image)" width="100" height="100" />
+              <h4>{{ loop.title }}</h2>
+              <p>{{ loop.description }}</p>
+                <p>Uploaded by: {{ loop.user.username }}</p>
+              <audio controls>
+                  <source src="{{ loop.audio.url }}" type="audio/mpeg">
+              </audio>
+            </li>
+            {% endfor %}
+           </ul>
+      </div>
+    </div>
+</div>
 {% endblock %}

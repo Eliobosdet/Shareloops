@@ -59,6 +59,12 @@ class ProfileDetailView(DetailView):
     template_name = 'user/profile.html'
     context_object_name = 'user'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['loops'] = self.object.loops.all()
+        context['profImg'] = getattr(self.object, 'profileimage', None)
+        return context
+
     def get_object(self, queryset=None):
         # Recupera l'utente in base alla pk e verifica che corrisponda all'utente loggato
         obj = super().get_object(queryset)
