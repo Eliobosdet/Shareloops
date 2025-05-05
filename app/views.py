@@ -1,6 +1,7 @@
 from django.http import HttpResponse
+from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import DetailView, ListView, UpdateView
+from django.views.generic import DetailView, ListView, UpdateView, DeleteView
 from django.contrib import messages
 from django.contrib.auth import login, logout, update_session_auth_hash
 from django.contrib.auth.forms import PasswordChangeForm
@@ -63,19 +64,68 @@ class ProfileDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['loops'] = self.object.loops.all()
         context['profImg'] = getattr(self.object, 'profileimage', None)
+        context['profForm'] = ProfileImageUpdateForm()
         return context
 
     def get_object(self, queryset=None):
-        # Recupera l'utente in base alla pk e verifica che corrisponda all'utente loggato
         obj = super().get_object(queryset)
-        if obj.pk != self.request.user.pk:
-            raise HttpResponseForbidden("Non hai il permesso di accedere a questa pagina.")
         return obj
+    
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()  # Ottieni l'utente corrente
+        profile_image = getattr(self.object, 'profileimage', None)  # Ottieni l'istanza di ProfileImage
+
+        if profile_image is None:
+            # Se non esiste un'istanza di ProfileImage, creane una
+            profile_image = ProfileImage.objects.create(user=self.object)
+
+        form = ProfileImageUpdateForm(request.POST, request.FILES, instance=profile_image)
+
+        if form.is_valid():
+            # Elimina l'immagine precedente se non è quella predefinita
+            if profile_image.image and profile_image.image.name != 'defaultProfileImage.jpg':
+                profile_image.image.delete(save=False)
+
+            # Salva la nuova immagine
+            form.save()
+            return redirect('profile', pk=self.object.id)
+
+        # Se il form non è valido, ricarica la pagina con gli errori
+        context = self.get_context_data()
+        context['profForm'] = form
+        return self.render_to_response(context)
+    
+class ProfileUpdateView(UpdateView):
+    model = User
+    template_name = 'user/profile_edit.html'
+    form_class = CustomRegisterForm
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        user.save()
+        messages.success(self.request, 'Profile updated successfully!')
+        return redirect('profile', pk=user.id)
+    
+
+@login_required
+@require_POST
+def remove_profile_image(request):
+    profile = request.user.profile
+    profile.image.delete(save=False)  # elimina il file fisico
+    profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
+    profile.save()
+    return redirect('profile', pk=request.user.id)
+
    
 class LoopsListView(ListView):
     model = Loop
     template_name = 'loops.html'
     context_object_name = 'loops'
+
+
 
 @login_required
 def upload_loop(request):

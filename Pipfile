@@ -10,6 +10,7 @@ crispy-bootstrap5 = "*"
 pillow = "*"
 libmagic = "*"
 python-magic-bin = "*"
+django-widget-tweaks = "*"
 
 [dev-packages]
 

@@ -1,7 +1,9 @@
 import os, magic
 from django.db import models
-from django.contrib.auth.models import User
+from django.dispatch import receiver
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
 
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
@@ -104,5 +106,14 @@ class ProfileImage(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(
         upload_to=profileimage_upload_path, 
-        validators=[validate_image_extension, validate_coverimage_size]
+        validators=[validate_image_extension, validate_coverimage_size],
+        default='defaultProfileImage.jpg'
     )
+
+@receiver(post_save, sender=User)
+def create_profile_image(sender, instance, created, **kwargs):
+    if created:
+        try:
+            ProfileImage.objects.create(user=instance)
+        except Exception as e:
+            print(f"Errore nella creazione dell'immagine profilo: {e}")

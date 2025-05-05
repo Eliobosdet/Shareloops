@@ -1,6 +1,8 @@
 {% extends "base.html"%}
 
-{% load crispy_forms_tags %}
+{% comment %} {% load crispy_forms_tags %} {% endcomment %}
+{% load widget_tweaks %}
+{% load static %}
 {% block title %}
     Profile
 {% endblock %}
@@ -11,10 +13,25 @@
     <div class="row align-items-center">
         <!-- Colonna per l'immagine del profilo -->
         <div class="col-md-4 text-center">
-            {% if profImg and profImg.image %}
-                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
-            {% else %}
-                <img src="{{ MEDIA_URL }}defaultProfileImage.jpg" alt="Immagine predefinita" class="rounded-circle img-fluid" style="max-width: 200px;">
+            <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+        
+            {% if user == request.user %}
+              <div class="d-flex justify-content-center gap-2">
+                <label for="id_image" class="btn btn-outline-primary">
+                    Aggiorna immagine
+                </label>
+                <input type="file" id="id_image" name="image" class="d-none">
+                {% if profImg.image != 'defaultProfileImage.jpg' %}
+                    <form method="POST" action="{% url 'rm_profile_img' pk=user.id%}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger">Rimuovi immagine</button>
+                    </form>
+                {% endif %}
+              </div>
+              <form method="POST" enctype="multipart/form-data" action="{% url 'profile' pk=user.id%}" id="imageUploadForm">
+                {% csrf_token %}
+                {{ form.image|add_class:"d-none" }}
+              </form> 
             {% endif %}
         </div>
 
@@ -22,15 +39,10 @@
         <div class="col-md-8">
             <h1 class="fw-bold">{{ user.username }}</h1>
             <h4 class="text-muted">{{ user.first_name }} {{ user.last_name }}</h4>
-            <p class="text-muted"><i class="fas fa-map-marker-alt"></i> Maranello, Italy</p>
             <hr>
             <p><strong>Email:</strong> {{ user.email }}</p>
             <p><strong>Data di registrazione:</strong> {{ user.date_joined|date:"d M Y" }}</p>
             <p><strong>Ultimo accesso:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
-            <div class="mt-3">
-                <a href="#" class="btn btn-primary">Modifica profilo</a>
-                <a href="{% url 'home' %}" class="btn btn-secondary">Torna alla home</a>
-            </div>
         </div>
     </div>
     
@@ -56,4 +68,46 @@
       </div>
     </div>
 </div>
+
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Conferma immagine</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="imagePreview" class="rounded-circle" width="150" height="150" alt="Anteprima">
+        </div>
+        <div class="modal-footer">
+          <button id="confirmUploadBtn" class="btn btn-primary">Carica</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const fileInput = document.getElementById("id_image");
+    const previewImg = document.getElementById("imagePreview");
+    const confirmBtn = document.getElementById("confirmUploadBtn");
+    const form = document.getElementById("imageUploadForm");
+  
+    fileInput.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          previewImg.src = e.target.result;
+          new bootstrap.Modal(document.getElementById('previewModal')).show();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  
+    confirmBtn.addEventListener("click", function () {
+        console.log("Caricamento dell'immagine...");
+      form.submit();
+    });
+  </script>
 {% endblock %}
