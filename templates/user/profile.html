@@ -13,24 +13,39 @@
     <div class="row align-items-center">
         <!-- Colonna per l'immagine del profilo -->
         <div class="col-md-4 text-center">
-            <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+            {% if profImg.image %}
+                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+            {% else %}
+                <img src="{% static 'defaultProfileImage.jpg' %}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+            {% endif %}
         
             {% if user == request.user %}
+                {% if profForm.errors %}
+                  <div class="alert alert-danger mt-3">
+                    <ul>
+                      {% for field, errors in profForm.errors.items %}
+                        {% for error in errors %}
+                          <li><strong>{{ field }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
               <div class="d-flex justify-content-center gap-2">
                 <label for="id_image" class="btn btn-outline-primary">
                     Aggiorna immagine
                 </label>
-                <input type="file" id="id_image" name="image" class="d-none">
                 {% if profImg.image != 'defaultProfileImage.jpg' %}
-                    <form method="POST" action="{% url 'rm_profile_img' pk=user.id%}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-outline-danger">Rimuovi immagine</button>
-                    </form>
+                <form method="POST" action="{% url 'rm_profile_img' pk=user.id%}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger">Rimuovi immagine</button>
+                </form>
                 {% endif %}
               </div>
-              <form method="POST" enctype="multipart/form-data" action="{% url 'profile' pk=user.id%}" id="imageUploadForm">
+              <form method="POST" enctype="multipart/form-data" action="{% url 'profile' pk=user.id %}" id="imageUploadForm">
                 {% csrf_token %}
-                {{ form.image|add_class:"d-none" }}
+                <input type="file" id="id_image" name="image" class="d-none">
+                {{ profForm.image|add_class:"d-none" }}
               </form> 
             {% endif %}
         </div>
@@ -77,6 +92,8 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
         </div>
         <div class="modal-body text-center">
+            <p>L'immagine deve essere in formato JPG o PNG e non superare i 2MB di dimensione.</p>
+            <p>La lunghezza del nome del file non deve superare i 50 caratteri.</p>
           <img id="imagePreview" class="rounded-circle" width="150" height="150" alt="Anteprima">
         </div>
         <div class="modal-footer">

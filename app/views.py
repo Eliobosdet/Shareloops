@@ -72,52 +72,56 @@ class ProfileDetailView(DetailView):
         return obj
     
     def post(self, request, *args, **kwargs):
-        self.object = self.get_object()  # Ottieni l'utente corrente
-        profile_image = getattr(self.object, 'profileimage', None)  # Ottieni l'istanza di ProfileImage
+            self.object = self.get_object()  # Ottieni l'utente corrente
+            profile_image = getattr(self.object, 'profileimage', None)  # Ottieni l'istanza di ProfileImage
 
-        if profile_image is None:
-            # Se non esiste un'istanza di ProfileImage, creane una
-            profile_image = ProfileImage.objects.create(user=self.object)
+            if profile_image is None:
+                # Se non esiste un'istanza di ProfileImage, creane una
+                profile_image = ProfileImage.objects.create(user=self.object)
 
-        form = ProfileImageUpdateForm(request.POST, request.FILES, instance=profile_image)
+            form = ProfileImageUpdateForm(request.POST, request.FILES, instance=profile_image)
 
-        if form.is_valid():
-            # Elimina l'immagine precedente se non è quella predefinita
-            if profile_image.image and profile_image.image.name != 'defaultProfileImage.jpg':
-                profile_image.image.delete(save=False)
+            if form.is_valid():
+                old_image = None
+                if profile_image.image.name != 'defaultProfileImage.jpg':
+                    old_image = profile_image.image
 
-            # Salva la nuova immagine
-            form.save()
-            return redirect('profile', pk=self.object.id)
+                form.save()
 
-        # Se il form non è valido, ricarica la pagina con gli errori
-        context = self.get_context_data()
-        context['profForm'] = form
-        return self.render_to_response(context)
-    
-class ProfileUpdateView(UpdateView):
-    model = User
-    template_name = 'user/profile_edit.html'
-    form_class = CustomRegisterForm
+                if old_image:
+                    old_image.delete(save=False)
 
-    def get_object(self, queryset=None):
-        return self.request.user
+                messages.success(request, "Immagine del profilo aggiornata con successo!")
+                return redirect('profile', pk=self.object.id)
+            else:
+                print(form.errors)
+            # Se il form non è valido, ricarica la pagina con gli errori
+            context = self.get_context_data()
+            context['profForm'] = form
+            return self.render_to_response(context)    
+# class ProfileUpdateView(UpdateView):
+#     model = User
+#     template_name = 'user/profile_edit.html'
+#     form_class = CustomRegisterForm
 
-    def form_valid(self, form):
-        user = form.save(commit=False)
-        user.save()
-        messages.success(self.request, 'Profile updated successfully!')
-        return redirect('profile', pk=user.id)
+#     def get_object(self, queryset=None):
+#         return self.request.user
+
+#     def form_valid(self, form):
+#         user = form.save(commit=False)
+#         user.save()
+#         messages.success(self.request, 'Profile updated successfully!')
+#         return redirect('profile', pk=user.id)
     
 
 @login_required
 @require_POST
-def remove_profile_image(request):
-    profile = request.user.profile
+def remove_profile_image(request, pk=None):
+    profile = request.user.profileimage
     profile.image.delete(save=False)  # elimina il file fisico
     profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
     profile.save()
-    return redirect('profile', pk=request.user.id)
+    return redirect('profile', pk=pk)
 
    
 class LoopsListView(ListView):

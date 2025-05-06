@@ -107,7 +107,8 @@ class ProfileImage(models.Model):
     image = models.ImageField(
         upload_to=profileimage_upload_path, 
         validators=[validate_image_extension, validate_coverimage_size],
-        default='defaultProfileImage.jpg'
+        default='defaultProfileImage.jpg',
+        max_length=255
     )
 
 @receiver(post_save, sender=User)
