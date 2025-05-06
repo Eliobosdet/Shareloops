@@ -84,25 +84,24 @@ class ProfileDetailView(DetailView):
 
         profile_image, created = ProfileImage.objects.get_or_create(user=self.object)
         print(f"ProfileImage object: {profile_image}, Created: {created}")
+        profile_image.refresh_from_db()
+        old_image = profile_image.image 
+        print(f"old image: {old_image.path}")
         form = ProfileImageUpdateForm(request.POST, request.FILES, instance=profile_image)
         print(f"Form initialized: {form}")
 
         if form.is_valid():
             print("Form is valid")
             try:
-                # Salva prima la nuova immagine
-                instance = form.save(commit=False)
-                print(f"Form instance to save: {instance}")
-
                 # Elimina la vecchia immagine solo se diversa da quella default
-                if (profile_image.image and 
-                    profile_image.image.name != 'defaultProfileImage.jpg' and 
-                    os.path.exists(profile_image.image.path)):
-                    
-                    print(f"Deleting old image: {profile_image.image.path}")
-                    profile_image.image.delete(save=False)
+                if (old_image and 
+                    old_image.name != 'defaultProfileImage.jpg' and 
+                    os.path.exists(old_image.path)):
+                    # Elimina il file fisico
+                    print(f"Deleting old image: {old_image.path}")
+                    os.remove(old_image.path)
                 
-                instance.save()
+                form.save()
                 print("Profile image updated successfully")
                 messages.success(request, "Immagine aggiornata!")
                 return redirect('profile', pk=self.object.id)

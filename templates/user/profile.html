@@ -14,9 +14,9 @@
         <!-- Colonna per l'immagine del profilo -->
         <div class="col-md-4 text-center">
             {% if profImg.image %}
-                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class=" img-fluid img-thumbnail" style="max-width: 200px;">
             {% else %}
-                <img src="{% static 'defaultProfileImage.jpg' %}" alt="Immagine del profilo" class="rounded-circle img-fluid" style="max-width: 200px;">
+                <img src="{% static 'defaultProfileImage.jpg' %}" alt="Immagine del profilo" class="img-fluid img-thumbnail" style="max-width: 200px;">
             {% endif %}
         
             {% if user == request.user %}
@@ -94,7 +94,7 @@
         <div class="modal-body text-center">
             <p>L'immagine deve essere in formato JPG o PNG e non superare i 2MB di dimensione.</p>
             <p>La lunghezza del nome del file non deve superare i 50 caratteri.</p>
-          <img id="imagePreview" class="rounded-circle" width="150" height="150" alt="Anteprima">
+          <img id="imagePreview" class="img-thumbnail" width="150" height="150" alt="Anteprima">
         </div>
         <div class="modal-footer">
           <button id="confirmUploadBtn" class="btn btn-primary">Carica</button>
