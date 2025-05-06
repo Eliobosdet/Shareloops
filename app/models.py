@@ -110,7 +110,16 @@ class ProfileImage(models.Model):
         default='defaultProfileImage.jpg',
         max_length=255
     )
-
+    
+    def save(self, *args, **kwargs):
+        # Sovrascrivi il salvataggio per rinominare il file
+        if self.image and self.image.name != 'defaultProfileImage.jpg':
+            # Ottieni l'estensione del file originale
+            ext = os.path.splitext(self.image.name)[1]
+            # Imposta il nuovo nome
+            self.image.name = f'img{ext}'  # Es: img.jpg, img.png
+        super().save(*args, **kwargs)
+        
 @receiver(post_save, sender=User)
 def create_profile_image(sender, instance, created, **kwargs):
     if created:
