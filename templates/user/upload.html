@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}
+Upload  
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+<div class="mt-5 container-lg">
+    <h1>Scegli cosa vuoi caricare:</h1>
+    <div class="d-flex justify-content-center">
+            <a href="{% url 'uploadloop' %}" 
+                class="nav-link col-6 bg-light text-center p-3 m-2 rounded">
+                Carica un Loop
+            </a>
+            <a href="{% url 'uploadsamplepack' %}" 
+                class="nav-link col-6 bg-light text-center p-3 m-2 rounded">
+                Carica un SampleKit
+            </a>
+    </div>
+</div>
+{% endblock %}

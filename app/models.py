@@ -4,6 +4,9 @@ from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+from functools import partial
+
+
 
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
@@ -15,10 +18,13 @@ def validate_image_extension(value):
     if ext not in ['.jpg', '.jpeg', '.png']:
         raise ValidationError('Image format not supported. Use .jpg, .jpeg, or .png')
 
-def validate_file_size(value):
-    max_size = 10 * 1024 * 1024  # 10 MB
+def validate_fileMB_size(value,size_MB=10):
+    max_size = size_MB * 1024 * 1024 
     if value.size > max_size:
         raise ValidationError('The audio file cannot exceed 10MB.')
+
+validate_fileMB_size_20 = partial(validate_fileMB_size, size_MB=20)
+validate_fileMB_size_10 = partial(validate_fileMB_size, size_MB=10)
 
 def validate_coverimage_size(value):
     max_size = 2 * 1024 * 1024  # 2 MB
@@ -26,7 +32,6 @@ def validate_coverimage_size(value):
         raise ValidationError('The cover image cannot exceed 2MB.')
 
 def user_directory_path(instance, filename, subfolder):
-    # Costruisce il percorso: media/users/<user_id>/<subfolder>/<filename>
     return f'users/{instance.user.id}/{subfolder}/{filename}'
 
 def loop_audio_upload_path(instance, filename):
@@ -41,7 +46,7 @@ class Loop(models.Model):
     description = models.TextField(blank=True, null=True)
     audio_file = models.FileField(
         upload_to=loop_audio_upload_path,
-        validators=[validate_audio_extension, validate_file_size]
+        validators=[validate_audio_extension, validate_fileMB_size_10]
     )
     cover_image = models.ImageField(
         upload_to=loop_cover_upload_path,
@@ -57,15 +62,12 @@ class Loop(models.Model):
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 
-def validate_zip_file(file):
-    # Controllo estensione
+def validate_zip_extension(file):
     if not file.name.endswith('.zip'):
         raise ValidationError("Il file deve avere estensione .zip.")
-
     # Controllo MIME type reale (non solo estensione)
     mime = magic.from_buffer(file.read(2048), mime=True)
     file.seek(0)  # Torna all’inizio per evitare problemi in seguito
-
     if mime != 'application/zip':
         raise ValidationError("Il file caricato non è un file ZIP valido.")
     
@@ -84,7 +86,7 @@ class SamplePack(models.Model):
     description = models.TextField(blank=True, null=True)
     zip_file = models.FileField(
         upload_to=samplepack_zip_upload_path,
-        validators=[validate_zip_file]
+        validators=[validate_zip_extension, validate_fileMB_size_20]
     )
     cover_image = models.ImageField(
         upload_to=samplepack_cover_upload_path,
@@ -92,8 +94,10 @@ class SamplePack(models.Model):
     )
     preview_audio = models.FileField(
         upload_to=samplepack_preview_upload_path,
-        validators=[validate_audio_extension, validate_file_size]
+        validators=[validate_audio_extension, validate_fileMB_size_10],
+        blank=True, null=True, default=None
     )
+    tags = models.CharField(max_length=255, blank=True, null=True, help_text="Separate tags with commas")
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

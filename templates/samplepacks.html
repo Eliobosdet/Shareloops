@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}SamplePacks{% endblock %}
+{% block content %}
+<div class="container mt-5">
+  <h1>SamplePacks</h1>
+  <ul>
+    {% for sample in samplepacks %}
+    <li class="mb-4 border p-3 shadow-sm bg-light">
+      <img src="{{ sample.cover_image.url }}" alt="(SamplePack Image)" width="100" height="100" />
+      <h4>{{ sample.title }}</h2>
+      <p>{{ sample.description }}</p>
+        <p>Uploaded by: <a href="{% url 'profile' pk=sample.user.id%}">{{ sample.user.username }}</a></p>
+      <audio controls>
+          <source src="{{ sample.audio.url }}" type="audio/mpeg">
+      </audio>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

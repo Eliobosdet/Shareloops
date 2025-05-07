@@ -140,13 +140,21 @@ def remove_profile_image(request, pk=None):
     profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
     profile.save()
     return redirect('profile', pk=pk)
-   
+
+@login_required
+def upload(request):
+    return render(request, 'user/upload.html')        
+  
+
 class LoopsListView(ListView):
     model = Loop
     template_name = 'loops.html'
     context_object_name = 'loops'
 
-
+class SamplePacksListView(ListView):
+    model = SamplePack
+    template_name = 'samplepacks.html'
+    context_object_name = 'samplepacks'
 
 @login_required
 def upload_loop(request):
@@ -161,3 +169,17 @@ def upload_loop(request):
     else:
         form = LoopForm()
     return render(request, 'user/upload_loop.html', {'form': form})
+
+@login_required
+def upload_samplepack(request):
+    if request.method == 'POST':
+        form = SamplePackForm(request.POST, request.FILES)
+        if form.is_valid():
+            loop = form.save(commit=False)
+            loop.user = request.user
+            loop.save()
+            messages.success(request, 'SamplePack uploaded successfully!')
+            return redirect('home')
+    else:
+        form = SamplePackForm()
+    return render(request, 'user/upload_samplepack.html', {'form': form})

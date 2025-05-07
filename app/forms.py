@@ -85,3 +85,7 @@ class LoopForm(forms.ModelForm):
         model = Loop
         fields = ['title', 'description', 'audio_file', 'tags', 'bpm', 'key', 'time_signature', 'genre', 'cover_image']
 
+class SamplePackForm(forms.ModelForm):
+    class Meta:
+        model = SamplePack
+        fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio', 'tags']

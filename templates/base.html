@@ -39,14 +39,14 @@
                 <a class="nav-link" href="{% url 'loops_list' %}">Loops</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="">Kits</a>
+                <a class="nav-link" href="{% url 'samplepacks_list' %}">Packs</a>
               </li>
             </ul>              
                 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                      <a class="nav-link" href="{% url 'uploadloop' %}">Load</a>
+                      <a class="nav-link" href="{% url 'upload' %}">Load</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'profile' pk=request.user.id%}">Profile</a>

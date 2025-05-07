@@ -1,0 +1,14 @@
+{% extends "base.html"%}
+
+{% block title %}Upload Loop{% endblock %}
+{% block content %}
+{{ block.super }} 
+<div class="container mt-5">
+  <h1>Upload SamplePack</h1>
+  <form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Upload</button>
+  </form>
+</div>
+{% endblock %}
