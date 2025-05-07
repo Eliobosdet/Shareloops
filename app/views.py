@@ -8,6 +8,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .forms import *
+from .utils import get_ordered_loads
 import logging
 # from django.contrib.auth.forms import AuthenticationForm
 
@@ -62,9 +63,10 @@ class ProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['loops'] = self.object.loops.all()
+        # context['loops'] = self.object.loops.all()
         context['profImg'] = getattr(self.object, 'profileimage', None)
         context['profForm'] = ProfileImageUpdateForm()
+        context['loads'] = get_ordered_loads(self.object)
         return context
 
     def get_object(self, queryset=None):
@@ -117,6 +119,26 @@ class ProfileDetailView(DetailView):
         context['profForm'] = form
         print("Rendering response with updated context")
         return self.render_to_response(context)
+
+class LoopDetailView(DetailView):
+    model = Loop
+    template_name = 'user/loop_detail.html'
+    context_object_name = 'loop'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profImg'] = getattr(self.object.user, 'profileimage', None)
+        return context
+    
+class SamplePackDetailView(DetailView):
+    model = SamplePack
+    template_name = 'user/samplepack_detail.html'
+    context_object_name = 'samplepack'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['profImg'] = getattr(self.object.user, 'profileimage', None)
+        return context
 # class ProfileUpdateView(UpdateView):
 #     model = User
 #     template_name = 'user/profile_edit.html'
@@ -130,7 +152,6 @@ class ProfileDetailView(DetailView):
 #         user.save()
 #         messages.success(self.request, 'Profile updated successfully!')
 #         return redirect('profile', pk=user.id)
-    
 
 @login_required
 @require_POST
@@ -155,6 +176,21 @@ class SamplePacksListView(ListView):
     model = SamplePack
     template_name = 'samplepacks.html'
     context_object_name = 'samplepacks'
+
+@login_required
+@require_POST
+def delete_load_view(request, pk, modeltype):
+    if modeltype == 'Loop':
+        load = get_object_or_404(Loop, pk=pk, user=request.user)
+    elif modeltype == 'SamplePack':
+        load = get_object_or_404(SamplePack, pk=pk, user=request.user)
+    else:
+        messages.error(request, "Invalid model type.")
+        return redirect('home')
+
+    load.delete()
+    messages.success(request, f"{modeltype} deleted successfully!")
+    return redirect('home')
 
 @login_required
 def upload_loop(request):

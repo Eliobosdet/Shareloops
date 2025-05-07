@@ -38,7 +38,7 @@
                 {% if profImg.image != 'defaultProfileImage.jpg' %}
                 <form method="POST" action="{% url 'rm_profile_img' pk=user.id%}">
                   {% csrf_token %}
-                  <button type="submit" class="btn btn-outline-danger">Rimuovi immagine</button>
+                  <button type="button" class="btn btn-outline-danger delete-btn">Rimuovi immagine</button>
                 </form>
                 {% endif %}
               </div>
@@ -65,18 +65,31 @@
 
     <div class="row">
       <div class="col-md-12">
-          <h2 class="fw-bold">Loops caricati</h2>
+          <h2 class="fw-bold">I tuoi caricamenti</h2>
           <ul class="list-group">
-            {% for loop in loops %}
+            {% for load in loads %}
             <li class="mb-4 border p-3 shadow-sm bg-light">
-              {% comment %} <a href="{% url 'loop_detail' loop.id %}"> {% endcomment %}
-              <img src="{{ loop.cover_image.url }}" alt="(Loop Image)" width="100" height="100" />
-              <h4>{{ loop.title }}</h2>
-              <p>{{ loop.description }}</p>
-                <p>Uploaded by: {{ loop.user.username }}</p>
-              <audio controls>
+              {% comment %} <a href="{% url 'loop_detail' load.id %}"> {% endcomment %}
+              <img src="{{ load.obj.cover_image.url }}" alt="(Load Image)" width="100" height="100" />
+              <h4>{{ load.obj.title }}</h4>
+              <p>{{ load.obj.description }}</p>
+                <p>Uploaded at: {{ load.obj.uploaded_at|date:"d M Y H:i" }}</p>
+              {% comment %} <audio controls>
                   <source src="{{ loop.audio.url }}" type="audio/mpeg">
-              </audio>
+              </audio> {% endcomment %}
+              {% if load.modeltype == 'Loop'%}
+                <div class="d-flex justify-content-end gap-2">
+                  <a href="" class="btn btn-outline-primary">Modifica1</a>
+                </div>
+              {% elif load.modeltype == 'SamplePack' %}
+                <div class="d-flex justify-content-end gap-2">
+                  <a href="" class="btn btn-outline-primary">Modifica2</a>
+                </div>
+              {% endif %}
+              <form method="POST" action="{% url 'delete_load' pk=load.obj.id modeltype=load.modeltype %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-outline-danger delete-btn">Elimina</button>
+              </form>
             </li>
             {% endfor %}
            </ul>
@@ -84,25 +97,8 @@
     </div>
 </div>
 
-<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Conferma immagine</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
-        </div>
-        <div class="modal-body text-center">
-            <p>L'immagine deve essere in formato JPG o PNG e non superare i 2MB di dimensione.</p>
-            <p>La lunghezza del nome del file non deve superare i 50 caratteri.</p>
-          <img id="imagePreview" class="img-thumbnail" width="150" height="150" alt="Anteprima">
-        </div>
-        <div class="modal-footer">
-          <button id="confirmUploadBtn" class="btn btn-primary">Carica</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  {% include "components/delete_confirm_modal.html"%}
+  {% include "components/load_image_confirm_modal.html"%}
   
   <script>
     const fileInput = document.getElementById("id_image");
@@ -125,6 +121,21 @@
     confirmBtn.addEventListener("click", function () {
         console.log("Caricamento dell'immagine...");
       form.submit();
+    });
+
+    let formToSubmit = null;
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', function () {
+        formToSubmit = this.closest('form');
+        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+      });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+      if (formToSubmit) {
+        formToSubmit.submit();
+      }
     });
   </script>
 {% endblock %}

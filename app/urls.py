@@ -30,6 +30,7 @@ urlpatterns = [
     path('profile/<int:pk>/', views.ProfileDetailView.as_view(), name='profile'),
     # path('profile/<int:pk>/edit/', views.ProfileUpdateView.as_view(), name='edit_profile'),
     path('profile/<int:pk>/removeprofileimage/', views.remove_profile_image, name='rm_profile_img'),
+    path('delete/load/<int:pk>/<str:modeltype>/', views.delete_load_view, name='delete_load'),
     path('upload/', views.upload, name='upload'),
     path('upload/loop', views.upload_loop, name='uploadloop'),
     path('upload/samplepack', views.upload_samplepack, name='uploadsamplepack'),

@@ -3,7 +3,7 @@ from django.db import models
 from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
-from django.db.models.signals import post_save
+from django.db.models.signals import pre_delete, post_save
 from functools import partial
 
 
@@ -131,3 +131,21 @@ def create_profile_image(sender, instance, created, **kwargs):
             ProfileImage.objects.create(user=instance)
         except Exception as e:
             print(f"Errore nella creazione dell'immagine profilo: {e}")
+        
+@receiver(pre_delete, sender=Loop)
+def delete_loop_files(sender, instance, **kwargs):
+    """Elimina i file quando il modello viene cancellato"""
+    if instance.audio_file:
+        instance.audio_file.delete(save=False)
+    if instance.cover_image:
+        instance.cover_image.delete(save=False)
+        
+@receiver(pre_delete, sender=SamplePack)
+def delete_samplepack_files(sender, instance, **kwargs):
+    """Elimina i file quando il modello SamplePack viene cancellato"""
+    if instance.zip_file:
+        instance.zip_file.delete(save=False)
+    if instance.cover_image:
+        instance.cover_image.delete(save=False)
+    if instance.preview_audio:
+        instance.preview_audio.delete(save=False)
