@@ -13,6 +13,7 @@
       defer
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
     ></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
     {% block head %} {% endblock %}
     <title>{% block title %} {% endblock %}</title>
 </head>
@@ -68,8 +69,32 @@
         </div>
     </nav>
   </div>
+  {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message|safe }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+    <script>
+        // Rimuovi i messaggi dopo 5 secondi
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.classList.remove('show'); // Nasconde il messaggio
+                alert.classList.add('fade');   // Aggiunge l'effetto di dissolvenza
+                setTimeout(() => alert.remove(), 500); // Rimuove il messaggio dal DOM
+            });
+        }, 5000); // 5000 millisecondi = 5 secondi
+    </script>
+{% endif %}
+
 {% endblock %}
+
 {% block content %}
 {% endblock %}
+
 </body>
 </html>

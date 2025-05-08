@@ -65,7 +65,13 @@
 
     <div class="row">
       <div class="col-md-12">
+        {% if request.user.id == user.id %}
           <h2 class="fw-bold">I tuoi caricamenti</h2>
+        {% else %}
+          <h2 class="fw-bold">Caricamenti di {{ user.username }}</h2>
+        {% endif %}
+
+        {% comment %} {% if loads|length == 0 %} {% endcomment %}
           <ul class="list-group">
             {% for load in loads %}
             <li class="mb-4 border p-3 shadow-sm bg-light">
@@ -77,6 +83,7 @@
               {% comment %} <audio controls>
                   <source src="{{ loop.audio.url }}" type="audio/mpeg">
               </audio> {% endcomment %}
+              {% include "components/like_container.html"%}
               {% if load.modeltype == 'Loop'%}
                 <div class="d-flex justify-content-end gap-2">
                   <a href="" class="btn btn-outline-primary">Modifica1</a>

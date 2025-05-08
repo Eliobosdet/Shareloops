@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import DetailView, ListView, UpdateView, DeleteView
@@ -122,7 +123,7 @@ class ProfileDetailView(DetailView):
 
 class LoopDetailView(DetailView):
     model = Loop
-    template_name = 'user/loop_detail.html'
+    template_name = 'loop_detail.html'
     context_object_name = 'loop'
 
     def get_context_data(self, **kwargs):
@@ -139,33 +140,6 @@ class SamplePackDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         context['profImg'] = getattr(self.object.user, 'profileimage', None)
         return context
-# class ProfileUpdateView(UpdateView):
-#     model = User
-#     template_name = 'user/profile_edit.html'
-#     form_class = CustomRegisterForm
-
-#     def get_object(self, queryset=None):
-#         return self.request.user
-
-#     def form_valid(self, form):
-#         user = form.save(commit=False)
-#         user.save()
-#         messages.success(self.request, 'Profile updated successfully!')
-#         return redirect('profile', pk=user.id)
-
-@login_required
-@require_POST
-def remove_profile_image(request, pk=None):
-    profile = request.user.profileimage
-    profile.image.delete(save=False)  # elimina il file fisico
-    profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
-    profile.save()
-    return redirect('profile', pk=pk)
-
-@login_required
-def upload(request):
-    return render(request, 'user/upload.html')        
-  
 
 class LoopsListView(ListView):
     model = Loop
@@ -179,18 +153,16 @@ class SamplePacksListView(ListView):
 
 @login_required
 @require_POST
-def delete_load_view(request, pk, modeltype):
-    if modeltype == 'Loop':
-        load = get_object_or_404(Loop, pk=pk, user=request.user)
-    elif modeltype == 'SamplePack':
-        load = get_object_or_404(SamplePack, pk=pk, user=request.user)
-    else:
-        messages.error(request, "Invalid model type.")
-        return redirect('home')
+def remove_profile_image(request, pk=None):
+    profile = request.user.profileimage
+    profile.image.delete(save=False)  # elimina il file fisico
+    profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
+    profile.save()
+    return redirect('profile', pk=pk)
 
-    load.delete()
-    messages.success(request, f"{modeltype} deleted successfully!")
-    return redirect('home')
+@login_required
+def upload(request):
+    return render(request, 'user/upload.html')        
 
 @login_required
 def upload_loop(request):
@@ -200,8 +172,13 @@ def upload_loop(request):
             loop = form.save(commit=False)
             loop.user = request.user
             loop.save()
-            messages.success(request, 'Loop uploaded successfully!')
-            return redirect('home')
+            url = reverse('loop_detail', args=[loop.id])
+            messages.success(
+                request,
+                f'Prodotto "{loop.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
+                extra_tags='safe'
+            )
+            form = LoopForm()
     else:
         form = LoopForm()
     return render(request, 'user/upload_loop.html', {'form': form})
@@ -219,3 +196,18 @@ def upload_samplepack(request):
     else:
         form = SamplePackForm()
     return render(request, 'user/upload_samplepack.html', {'form': form})
+
+@login_required
+@require_POST
+def delete_load_view(request, pk, modeltype):
+    if modeltype == 'Loop':
+        load = get_object_or_404(Loop, pk=pk, user=request.user)
+    elif modeltype == 'SamplePack':
+        load = get_object_or_404(SamplePack, pk=pk, user=request.user)
+    else:
+        messages.error(request, "Invalid model type.")
+        return redirect('profile')
+
+    load.delete()
+    messages.success(request, f"{modeltype} deleted successfully!")
+    return redirect('profile')

@@ -6,15 +6,20 @@
   <h1>Loops</h1>
   <ul>
     {% for loop in loops %}
+    <a href="{% url 'loop_detail' loop.id %}">
     <li class="mb-4 border p-3 shadow-sm bg-light">
-      {% comment %} <a href="{% url 'loop_detail' loop.id %}"> {% endcomment %}
       <img src="{{ loop.cover_image.url }}" alt="(Loop Image)" width="100" height="100" />
-      <h4>{{ loop.title }}</h2>
+      <h2>{{ loop.title }}</h2>
+        <audio controls>
+          <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
+        </audio>
       <p>{{ loop.description }}</p>
-        <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id%}">{{ loop.user.username }}</a></p>
-      <audio controls>
-          <source src="{{ loop.audio.url }}" type="audio/mpeg">
-      </audio>
+      <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id%}">{{ loop.user.username }}</a></p>
+    </li>
+    </a>
+    {% empty %}
+    <li class="mb-4 border p-3 shadow-sm bg-light">
+      <p>Nessun loop disponibile.</p>
     </li>
     {% endfor %}
   </ul>

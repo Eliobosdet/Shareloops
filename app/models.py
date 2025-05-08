@@ -4,19 +4,47 @@ from django.dispatch import receiver
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db.models.signals import pre_delete, post_save
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from functools import partial
 
+def validate_image_extension(value):
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png']:
+        raise ValidationError('Image format not supported. Use .jpg, .jpeg, or .png')
 
+def validate_coverimage_size(value):
+    max_size = 2 * 1024 * 1024  # 2 MB
+    if value.size > max_size:
+        raise ValidationError('The cover image cannot exceed 2MB.')
+
+def has_like_from_user(self, user):
+        """Verifica se l'utente ha messo like a questo oggetto."""
+        content_type = ContentType.objects.get_for_model(self)
+        return Like.objects.filter(content_type=content_type, object_id=self.id, user=user).exists()
+
+class UploadableItem(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    cover_image = models.ImageField(
+        validators=[validate_image_extension, validate_coverimage_size]
+    )
+    tags = models.CharField(max_length=255, blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        abstract = True
+
+    def likes(self):
+        content_type = ContentType.objects.get_for_model(self)
+        return Like.objects.filter(content_type=content_type, object_id=self.id)
 
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in ['.wav', '.mp3', '.flac']:
         raise ValidationError('Audio format not supported. Use .wav, .mp3, or .flac')
 
-def validate_image_extension(value):
-    ext = os.path.splitext(value.name)[1].lower()
-    if ext not in ['.jpg', '.jpeg', '.png']:
-        raise ValidationError('Image format not supported. Use .jpg, .jpeg, or .png')
 
 def validate_fileMB_size(value,size_MB=10):
     max_size = size_MB * 1024 * 1024 
@@ -26,10 +54,6 @@ def validate_fileMB_size(value,size_MB=10):
 validate_fileMB_size_20 = partial(validate_fileMB_size, size_MB=20)
 validate_fileMB_size_10 = partial(validate_fileMB_size, size_MB=10)
 
-def validate_coverimage_size(value):
-    max_size = 2 * 1024 * 1024  # 2 MB
-    if value.size > max_size:
-        raise ValidationError('The cover image cannot exceed 2MB.')
 
 def user_directory_path(instance, filename, subfolder):
     return f'users/{instance.user.id}/{subfolder}/{filename}'
@@ -40,25 +64,16 @@ def loop_audio_upload_path(instance, filename):
 def loop_cover_upload_path(instance, filename):
     return user_directory_path(instance, filename, 'loops/covers')
 
-class Loop(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='loops')
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+class Loop(UploadableItem):
     audio_file = models.FileField(
         upload_to=loop_audio_upload_path,
         validators=[validate_audio_extension, validate_fileMB_size_10]
     )
-    cover_image = models.ImageField(
-        upload_to=loop_cover_upload_path,
-        validators=[validate_image_extension, validate_coverimage_size]
-    )
-    key = models.CharField(max_length=10, blank=True, null=True, help_text="Example: C, Dm")
-    bpm = models.PositiveIntegerField(blank=True, null=True, help_text="Example: 120, 140")
-    tags = models.CharField(max_length=255, blank=True, null=True, help_text="Separate tags with commas")
+    key = models.CharField(max_length=10, blank=True, null=True)
+    bpm = models.PositiveIntegerField(blank=True, null=True)
     genre = models.CharField(max_length=100, blank=True, null=True)
-    time_signature = models.CharField(max_length=10, blank=True, null=True, help_text="Example: 4/4, 3/4")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
+    time_signature = models.CharField(max_length=10, blank=True, null=True)
+    
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 
@@ -80,25 +95,16 @@ def samplepack_cover_upload_path(instance, filename):
 def samplepack_preview_upload_path(instance, filename):
     return user_directory_path(instance, filename, 'samplepacks/preview')
 
-class SamplePack(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='samplepacks')
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
+class SamplePack(UploadableItem):
     zip_file = models.FileField(
         upload_to=samplepack_zip_upload_path,
         validators=[validate_zip_extension, validate_fileMB_size_20]
     )
-    cover_image = models.ImageField(
-        upload_to=samplepack_cover_upload_path,
-        validators=[validate_image_extension, validate_coverimage_size]
-    )
     preview_audio = models.FileField(
         upload_to=samplepack_preview_upload_path,
         validators=[validate_audio_extension, validate_fileMB_size_10],
-        blank=True, null=True, default=None
+        blank=True, null=True
     )
-    tags = models.CharField(max_length=255, blank=True, null=True, help_text="Separate tags with commas")
-    uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
@@ -149,3 +155,38 @@ def delete_samplepack_files(sender, instance, **kwargs):
         instance.cover_image.delete(save=False)
     if instance.preview_audio:
         instance.preview_audio.delete(save=False)
+
+class Like(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'content_type', 'object_id')
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+class Repost(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+    comment = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'content_type', 'object_id')
+
+
+

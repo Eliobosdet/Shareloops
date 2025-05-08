@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Loop Detail{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>{{ loop.title }}</h1>
+    <img src="{{ loop.cover_image.url }}" alt="Loop Image" class="img-fluid mb-3" style="max-width: 200px;"/>
+    <p>{{ loop.description }}</p>
+    <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id %}">{{ loop.user.username }}</a></p>
+    <audio controls>
+        <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+    <hr class="my-4">
+    <h2 class="fw-bold">Commenti</h2>
+    <ul class="list-group">
+        {% for comment in comments %}
+        <li class="list-group-item">
+            <strong>{{ comment.user.username }}</strong>:
+            {{ comment.text }}
+            <span class="text-muted
+                float-end">{{ comment.created_at|date:"d M Y H:i" }}</span>
+        </li>
+        {% empty %}
+        <li class="list-group-item">Nessun commento disponibile.</li>
+        {% endfor %}
+    </ul>
+    <hr class="my-4">
+    <h2 class="fw-bold">Aggiungi un commento</h2>
+    <form method="POST" action="">
+        {% comment %} <form method="POST" action="{% url 'add_comment' loop.id %}"> {% endcomment %}
+        {% csrf_token %}
+        <div class="mb-3">
+            <textarea class="form-control" name="comment" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Aggiungi commento</button>
+    </form>
+</div>
+
+{% endblock %}
