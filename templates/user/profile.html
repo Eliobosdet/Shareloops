@@ -83,7 +83,16 @@
               {% comment %} <audio controls>
                   <source src="{{ loop.audio.url }}" type="audio/mpeg">
               </audio> {% endcomment %}
-              {% include "components/like_container.html"%}
+              {% comment %} {% include "components/like_container.html"%} {% endcomment %}
+              
+              <div class="like-container" data-id="{{ load.id }}" data-model="{{ model_name }}">
+                <a href="{% url 'like_upload' pk=load.obj.id modeltype=load.modeltype %}" class="like-button" style="background:none; border:none;">
+                  <i class="fas fa-heart-o fa-lg"></i>
+                  <span class="like-count">{{ load.loops_like.likes_count }}</span>
+                </a>
+              </div>
+
+              
               {% if load.modeltype == 'Loop'%}
                 <div class="d-flex justify-content-end gap-2">
                   <a href="" class="btn btn-outline-primary">Modifica1</a>
@@ -93,7 +102,7 @@
                   <a href="" class="btn btn-outline-primary">Modifica2</a>
                 </div>
               {% endif %}
-              <form method="POST" action="{% url 'delete_load' pk=load.obj.id modeltype=load.modeltype %}">
+              <form method="POST" action="{% url 'delete_upload' pk=load.obj.id modeltype=load.modeltype %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-outline-danger delete-btn">Elimina</button>
               </form>

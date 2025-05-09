@@ -11,6 +11,7 @@ pillow = "*"
 libmagic = "*"
 python-magic-bin = "*"
 django-widget-tweaks = "*"
+fontawesomefree = "*"
 
 [dev-packages]
 

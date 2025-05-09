@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'app',
     'crispy_forms',
     'crispy_bootstrap5',
-    'widget_tweaks'
+    'widget_tweaks',
+    'fontawesomefree'
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"

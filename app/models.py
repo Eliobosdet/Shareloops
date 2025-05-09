@@ -18,11 +18,6 @@ def validate_coverimage_size(value):
     if value.size > max_size:
         raise ValidationError('The cover image cannot exceed 2MB.')
 
-def has_like_from_user(self, user):
-        """Verifica se l'utente ha messo like a questo oggetto."""
-        content_type = ContentType.objects.get_for_model(self)
-        return Like.objects.filter(content_type=content_type, object_id=self.id, user=user).exists()
-
 class UploadableItem(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
@@ -32,13 +27,12 @@ class UploadableItem(models.Model):
     )
     tags = models.CharField(max_length=255, blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-
+    likes = models.ManyToManyField(User, related_name='likes_%(class)s', blank=True)
     class Meta:
         abstract = True
 
-    def likes(self):
-        content_type = ContentType.objects.get_for_model(self)
-        return Like.objects.filter(content_type=content_type, object_id=self.id)
+    def likes_count(self):
+        return self.likes.count()
 
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
@@ -155,16 +149,6 @@ def delete_samplepack_files(sender, instance, **kwargs):
         instance.cover_image.delete(save=False)
     if instance.preview_audio:
         instance.preview_audio.delete(save=False)
-
-class Like(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'content_type', 'object_id')
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)

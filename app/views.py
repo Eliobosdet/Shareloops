@@ -199,7 +199,7 @@ def upload_samplepack(request):
 
 @login_required
 @require_POST
-def delete_load_view(request, pk, modeltype):
+def delete_upload_view(request, pk, modeltype):
     if modeltype == 'Loop':
         load = get_object_or_404(Loop, pk=pk, user=request.user)
     elif modeltype == 'SamplePack':
@@ -211,3 +211,23 @@ def delete_load_view(request, pk, modeltype):
     load.delete()
     messages.success(request, f"{modeltype} deleted successfully!")
     return redirect('profile')
+
+@login_required
+@require_POST
+def like_upload(request, pk, modeltype):
+    if modeltype == 'Loop':
+        load = get_object_or_404(Loop, pk=pk)
+    elif modeltype == 'SamplePack':
+        load = get_object_or_404(SamplePack, pk=pk)
+    else:
+        messages.error(request, "Invalid model type.")
+        return redirect('home')
+
+    if request.user in load.likes.all():
+        load.likes.remove(request.user)
+        messages.success(request, "You unliked this upload.")
+    else:
+        load.likes.add(request.user)
+        messages.success(request, "You liked this upload.")
+
+    return redirect('home')
