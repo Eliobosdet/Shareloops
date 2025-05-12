@@ -41,8 +41,7 @@ INSTALLED_APPS = [
     'app',
     'crispy_forms',
     'crispy_bootstrap5',
-    'widget_tweaks',
-    'fontawesomefree'
+    'widget_tweaks'
 ]
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
@@ -63,6 +62,12 @@ ROOT_URLCONF = 'app.urls'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # per il deploy
+
+
 
 TEMPLATES = [
     {

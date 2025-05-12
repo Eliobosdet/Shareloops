@@ -33,7 +33,7 @@ class UploadableItem(models.Model):
 
     def likes_count(self):
         return self.likes.count()
-
+    
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in ['.wav', '.mp3', '.flac']:

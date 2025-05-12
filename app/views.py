@@ -1,4 +1,5 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.apps import apps
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from django.shortcuts import render, redirect, get_object_or_404
@@ -146,6 +147,14 @@ class LoopsListView(ListView):
     template_name = 'loops.html'
     context_object_name = 'loops'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated:
+            context['liked_loops'] = self.request.user.likes_loop.all()
+        else:
+            context['liked_loops'] = []
+        return context
+
 class SamplePacksListView(ListView):
     model = SamplePack
     template_name = 'samplepacks.html'
@@ -212,22 +221,55 @@ def delete_upload_view(request, pk, modeltype):
     messages.success(request, f"{modeltype} deleted successfully!")
     return redirect('profile')
 
-@login_required
-@require_POST
-def like_upload(request, pk, modeltype):
-    if modeltype == 'Loop':
-        load = get_object_or_404(Loop, pk=pk)
-    elif modeltype == 'SamplePack':
-        load = get_object_or_404(SamplePack, pk=pk)
-    else:
-        messages.error(request, "Invalid model type.")
-        return redirect('home')
+# @login_required
+# @require_POST
+# def like_upload(request, pk, modeltype):
+#     if modeltype == 'Loop':
+#         load = get_object_or_404(Loop, pk=pk)
+#     elif modeltype == 'SamplePack':
+#         load = get_object_or_404(SamplePack, pk=pk)
+#     else:
+#         messages.error(request, "Invalid model type.")
+#         return redirect('home') 
 
-    if request.user in load.likes.all():
-        load.likes.remove(request.user)
-        messages.success(request, "You unliked this upload.")
-    else:
-        load.likes.add(request.user)
-        messages.success(request, "You liked this upload.")
+#     if request.user in load.likes.all():
+#         load.likes.remove(request.user)
+#         messages.success(request, "You unliked this upload.")
+#     else:
+#         load.likes.add(request.user)
+#         messages.success(request, "You liked this upload.")
 
-    return redirect('home')
+#     return redirect('home')
+
+def like_upload(request, modeltype, pk):
+    if request.method == "POST":
+        # Verifica se l'utente è autenticato
+        if not request.user.is_authenticated:
+            return redirect('login')
+        # Recupera il modello dinamicamente
+        try:
+            model = apps.get_model('app', modeltype)  # 'app' è il nome della tua app
+        except LookupError:
+            return JsonResponse({"error": "Modello non trovato"}, status=404)
+
+        # Recupera l'oggetto
+        try:
+            obj = model.objects.get(pk=pk)
+        except model.DoesNotExist:
+            return JsonResponse({"error": "Oggetto non trovato"}, status=404)
+
+        # Gestisci il like
+        user = request.user
+        if user in obj.likes.all():
+            obj.likes.remove(user)
+            liked = False
+        else:
+            obj.likes.add(user)
+            liked = True
+
+        return JsonResponse({
+            "liked": liked,
+            "likes_count": obj.likes.count()
+        })
+
+    return JsonResponse({"error": "Metodo non consentito"}, status=405)

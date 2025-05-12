@@ -1,48 +1,4 @@
-{% extends "base.html" %}
-
-{% load static %}
-
-{% block head%}
-  <script src="{% static 'likes.js' %}"></script>
-{% endblock %}
-
-{% block title %}Loops{% endblock %}
-{% block content %}
-<div class="container mt-5" id="loops-container">
-  <h1>Loops</h1>
-  <ul class="list-unstyled">
-    {% for loop in loops %}
-    <div class="row mt-3 border p-3 shadow-sm bg-light">
-      {% comment %} <a href="{% url 'loop_detail' loop.id %}"> {% endcomment %}
-      <li>
-        <img src="{{ loop.cover_image.url }}" alt="(Loop Image)" width="100" height="100" />
-        <h2>{{ loop.title }}</h2>
-          <audio controls>
-            <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
-          </audio>
-        <p>{{ loop.description }}</p>
-        <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id%}">{{ loop.user.username }}</a></p>
-      </li>
-      {% comment %} </a> {% endcomment %}
-      <div class="inline-flex gap-2">
-        {% if loop in liked_loops %}
-          <i class="fas fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
-        {% else %}
-          <i class="far fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
-        {% endif %}
-        <span class="like-count" >{{ loop.likes_count }}</span>
-      </div>
-    </div>
-      {% empty %}
-      <li>
-        <p>Nessun loop disponibile.</p>
-      </li>
-      {% endfor %}
-  </ul>
-</div>
-
-<script>
-  {% comment %} document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     // Funzione per ottenere il token CSRF dai cookie
     function getCookie(name) {
       let cookieValue = null;
@@ -63,11 +19,11 @@
   
     document.querySelectorAll(".like-icon").forEach(icon => {
       icon.addEventListener("click", function () {
-        const loopId = this.getAttribute("data-id");
+        const loadId = this.getAttribute("data-id");
         const modelType = this.getAttribute("data-type");
         const likeCountSpan = this.nextElementSibling; // assume <span> is right after the icon
   
-        const url = `/like/${loopId}/${modelType}/`;
+        const url = `/like/${loadId}/${modelType}/`;
 
         fetch(url, {
           method: "POST",
@@ -97,7 +53,4 @@
         });
       });
     });
-  }); {% endcomment %}
-</script>
-  
-{% endblock %}
+  });
