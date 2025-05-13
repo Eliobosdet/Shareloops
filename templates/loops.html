@@ -24,13 +24,18 @@
         <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id%}">{{ loop.user.username }}</a></p>
       </li>
       {% comment %} </a> {% endcomment %}
-      <div class="inline-flex gap-2">
+      <div class="d-inline-block me-2 gap-2">
         {% if loop in liked_loops %}
           <i class="fas fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
         {% else %}
           <i class="far fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
         {% endif %}
-        <span class="like-count" >{{ loop.likes_count }}</span>
+        <span class="like-count">{{ loop.likes_count }}</span>
+      </div>
+
+      <div class="d-inline-block gap-2">
+        <a href="{% url 'uploadable_detail' modeltype='Loop' pk=loop.id %}"><i class="far fa-comment fa-lg"></i></a>
+        <span class="comment-count">{{ loop.comments_count }}</span>
       </div>
     </div>
       {% empty %}

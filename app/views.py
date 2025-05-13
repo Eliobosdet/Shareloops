@@ -142,6 +142,33 @@ class SamplePackDetailView(DetailView):
         context['profImg'] = getattr(self.object.user, 'profileimage', None)
         return context
 
+class GenericDetailView(DetailView):
+    template_name = 'uploadableitem_detail.html'
+
+
+    def get_object(self):
+        modeltype = self.kwargs.get('modeltype')
+        pk = self.kwargs.get('pk')
+
+        # Determina il modello in base al modeltype
+        if modeltype == 'Loop':
+            model = Loop
+        elif modeltype == 'SamplePack':
+            model = SamplePack
+        else:
+            raise ValueError("Modeltype non valido")
+
+        # Recupera l'oggetto
+        return get_object_or_404(model, pk=pk)
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comments'] = Comment.objects.filter(
+            content_type=ContentType.objects.get_for_model(self.object),
+            object_id=self.object.pk
+        ).order_by('-created_at')
+        return context
+
 class LoopsListView(ListView):
     model = Loop
     template_name = 'loops.html'
@@ -220,26 +247,6 @@ def delete_upload_view(request, pk, modeltype):
     load.delete()
     messages.success(request, f"{modeltype} deleted successfully!")
     return redirect('profile')
-
-# @login_required
-# @require_POST
-# def like_upload(request, pk, modeltype):
-#     if modeltype == 'Loop':
-#         load = get_object_or_404(Loop, pk=pk)
-#     elif modeltype == 'SamplePack':
-#         load = get_object_or_404(SamplePack, pk=pk)
-#     else:
-#         messages.error(request, "Invalid model type.")
-#         return redirect('home') 
-
-#     if request.user in load.likes.all():
-#         load.likes.remove(request.user)
-#         messages.success(request, "You unliked this upload.")
-#     else:
-#         load.likes.add(request.user)
-#         messages.success(request, "You liked this upload.")
-
-#     return redirect('home')
 
 @login_required
 def like_upload(request, modeltype, pk):

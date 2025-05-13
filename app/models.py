@@ -34,6 +34,10 @@ class UploadableItem(models.Model):
     def likes_count(self):
         return self.likes.count()
     
+    def comments_count(self):
+        content_type = ContentType.objects.get_for_model(self)
+        return Comment.objects.filter(content_type=content_type, object_id=self.id).count()
+    
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in ['.wav', '.mp3', '.flac']:
@@ -151,11 +155,13 @@ def delete_samplepack_files(sender, instance, **kwargs):
         instance.preview_audio.delete(save=False)
 
 class Comment(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-    text = models.TextField()
+    upload = GenericForeignKey('content_type', 'object_id')
+    user = models.ForeignKey(User, related_name="comments", on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    # parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+    body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

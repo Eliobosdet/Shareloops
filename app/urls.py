@@ -29,6 +29,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/<int:pk>/', views.ProfileDetailView.as_view(), name='profile'),
     path('profile/<int:pk>/removeprofileimage/', views.remove_profile_image, name='rm_profile_img'),
+    path('detail/<str:modeltype>/<int:pk>/', views.GenericDetailView.as_view(), name='uploadable_detail'),
     path('detail/loop/<int:pk>/', views.LoopDetailView.as_view(), name='loop_detail'),
     path('detail/samplepack/<int:pk>/', views.SamplePackDetailView.as_view(), name='samplepack_detail'),
     path('upload/', views.upload, name='upload'),

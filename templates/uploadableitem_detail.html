@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5" id="uploadableitem-detail-container">
+  <h1>{{ uploadableitem.title }}</h1>
+  <img src="{{ uploadableitem.cover_image.url }}" alt="(Cover Image)" width="100" height="100" />
+  <audio controls>
+    <source src="{{ uploadableitem.audio_file.url }}" type="audio/mpeg">
+  </audio>
+  <p>{{ uploadableitem.description }}</p>
+  <p>Uploaded by: <a href="{% url 'profile' pk=uploadableitem.user.id %}">{{ uploadableitem.user.username }}</a></p>
+
+  <div class="d-inline-block me-2 gap-2">
+    {% if uploadableitem in liked_uploadableitems %}
+      <i class="fas fa-heart fa-lg like-icon" data-id="{{ uploadableitem.id }}" data-type="{{ modeltype }}"></i>
+    {% else %}
+      <i class="far fa-heart fa-lg like-icon" data-id="{{ uploadableitem.id }}" data-type="{{ modeltype }}"></i>
+    {% endif %}
+    <span class="like-count">{{ uploadableitem.likes_count }}</span>
+  </div>
+
+  <h3>Comments</h3>
+
+{% for comment in comments %}
+    <div class="comment">
+        <p><strong>{{ comment.user.username }}</strong>: {{ comment.text }}</p>
+        <p><small>{{ comment.created_at }}</small></p>
+    </div>
+{% endfor %}
+
+{% endblock %}
