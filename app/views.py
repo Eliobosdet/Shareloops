@@ -241,11 +241,9 @@ def delete_upload_view(request, pk, modeltype):
 
 #     return redirect('home')
 
+@login_required
 def like_upload(request, modeltype, pk):
     if request.method == "POST":
-        # Verifica se l'utente è autenticato
-        if not request.user.is_authenticated:
-            return redirect('login')
         # Recupera il modello dinamicamente
         try:
             model = apps.get_model('app', modeltype)  # 'app' è il nome della tua app

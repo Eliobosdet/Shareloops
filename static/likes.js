@@ -33,9 +33,15 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         })
         .then(response => {
-          if (response.ok) return response.json();
-          else throw new Error("Errore nella richiesta AJAX");
-        })
+            if (response.redirected) {
+                console.log("Redirecting to "+ response.url);
+              // Se il server restituisce un reindirizzamento, vai alla pagina di login
+              window.location.href = response.url;
+              return;
+            }
+            if (response.ok) return response.json();
+            else throw new Error("Errore nella richiesta AJAX");
+          })
         .then(data => {
           // Cambia stile dell'icona
           if (data.liked) {
