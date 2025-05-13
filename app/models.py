@@ -159,9 +159,9 @@ class Comment(models.Model):
     object_id = models.PositiveIntegerField()
     upload = GenericForeignKey('content_type', 'object_id')
     user = models.ForeignKey(User, related_name="comments", on_delete=models.CASCADE)
-    name = models.CharField(max_length=255, blank=True, null=True)
-    # parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
     body = models.TextField()
+    parent = models.ForeignKey('self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+    likes = models.ManyToManyField(User, related_name='likes_comments', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

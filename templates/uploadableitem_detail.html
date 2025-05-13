@@ -1,31 +1,64 @@
 {% extends "base.html" %}
+{% load static %}
 
+{% block head %}
+  <script src="{% static 'likes.js' %}"></script>
+{% endblock %}
 {% block content %}
 
 <div class="container mt-5" id="uploadableitem-detail-container">
-  <h1>{{ uploadableitem.title }}</h1>
-  <img src="{{ uploadableitem.cover_image.url }}" alt="(Cover Image)" width="100" height="100" />
+  <h1>{{ item.title }}</h1>
+  <img src="{{ item.cover_image.url }}" alt="(Cover Image)" width="100" height="100" />
   <audio controls>
-    <source src="{{ uploadableitem.audio_file.url }}" type="audio/mpeg">
+    <source src="{{ item.audio_file.url }}" type="audio/mpeg">
   </audio>
-  <p>{{ uploadableitem.description }}</p>
-  <p>Uploaded by: <a href="{% url 'profile' pk=uploadableitem.user.id %}">{{ uploadableitem.user.username }}</a></p>
+  <p>{{ item.description }}</p>
+  <p>Uploaded by: <a href="{% url 'profile' pk=item.user.id %}">{{ item.user.username }}</a></p>
 
   <div class="d-inline-block me-2 gap-2">
-    {% if uploadableitem in liked_uploadableitems %}
-      <i class="fas fa-heart fa-lg like-icon" data-id="{{ uploadableitem.id }}" data-type="{{ modeltype }}"></i>
+    {% if item in liked_uploadableitems %}
+      <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
     {% else %}
-      <i class="far fa-heart fa-lg like-icon" data-id="{{ uploadableitem.id }}" data-type="{{ modeltype }}"></i>
+      <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
     {% endif %}
-    <span class="like-count">{{ uploadableitem.likes_count }}</span>
+    <span class="like-count">{{ item.likes_count }}</span>
+    <form method="post" action="">
+      {% csrf_token %}
+      {{ commentForm.body }}
+      <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>
+    </form>
   </div>
 
   <h3>Comments</h3>
 
 {% for comment in comments %}
-    <div class="comment">
-        <p><strong>{{ comment.user.username }}</strong>: {{ comment.text }}</p>
-        <p><small>{{ comment.created_at }}</small></p>
+    <div class="row mt-3 border p-3 shadow-sm bg-light">
+      <div class="d-inline align-middle p-2 mb-2">
+        <a href="{% url 'profile' pk=comment.user.id %}" class="text-decoration-none text-dark">
+        <img src="{{ comment.user.profileimage.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
+        <h5 class="d-inline ms-2 align-middle">{{ comment.user.username }}</h5>
+        </a>
+      </div>
+      <hr>
+        <p>
+          {{ comment.body }}
+        </p>
+        <br>
+        <p class="text-end">
+          <small>{{ comment.created_at }}</small>
+        </p>
+        <br>
+        </div>
+
+        {% comment %} <div class="mt-3">
+          <form method="post" action="{% url 'add_reply' comment.id %}">
+            {% csrf_token %}
+            <div class="form-group">
+              <textarea name="reply_body" class="form-control" rows="2" placeholder="Write a reply..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm mt-2">Reply</button>
+          </form>
+        </div> {% endcomment %}
     </div>
 {% endfor %}
 

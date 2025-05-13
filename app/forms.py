@@ -89,3 +89,11 @@ class SamplePackForm(forms.ModelForm):
     class Meta:
         model = SamplePack
         fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio', 'tags']
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write a comment...'}),
+        }

@@ -23,7 +23,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const modelType = this.getAttribute("data-type");
         const likeCountSpan = this.nextElementSibling; // assume <span> is right after the icon
   
-        const url = `/like/${loadId}/${modelType}/`;
+        const url = this.classList.contains("uploadable") 
+          ? `/like/${loadId}/${modelType}/` 
+          : `/like/${loadId}/comment/`;
 
         fetch(url, {
           method: "POST",

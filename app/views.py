@@ -160,9 +160,12 @@ class GenericDetailView(DetailView):
 
         # Recupera l'oggetto
         return get_object_or_404(model, pk=pk)
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['item'] = self.object
+        context['modeltype'] = self.kwargs.get('modeltype')
+        context['commentForm'] = CommentForm()
         context['comments'] = Comment.objects.filter(
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk
@@ -275,6 +278,27 @@ def like_upload(request, modeltype, pk):
         return JsonResponse({
             "liked": liked,
             "likes_count": obj.likes.count()
+        })
+
+    return JsonResponse({"error": "Metodo non consentito"}, status=405)
+
+
+@login_required
+def like_comment(request, comment_id):
+    if request.method == "POST":
+        comment = get_object_or_404(Comment, id=comment_id)
+        user = request.user
+
+        if user in comment.likes.all():
+            comment.likes.remove(user)
+            liked = False
+        else:
+            comment.likes.add(user)
+            liked = True
+
+        return JsonResponse({
+            "liked": liked,
+            "likes_count": comment.likes.count()
         })
 
     return JsonResponse({"error": "Metodo non consentito"}, status=405)

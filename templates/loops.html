@@ -2,7 +2,7 @@
 
 {% load static %}
 
-{% block head%}
+{% block head %}
   <script src="{% static 'likes.js' %}"></script>
 {% endblock %}
 
@@ -20,15 +20,24 @@
           <audio controls>
             <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
           </audio>
+          <hr>
         <p>{{ loop.description }}</p>
-        <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id%}">{{ loop.user.username }}</a></p>
+        <hr>
+        <p class="text-end">
+          <small>{{ loop.created_at }}</small>
+          <br>
+            <small>
+            <img src="{{ loop.user.profileimage.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
+            <a href="{% url 'profile' pk=loop.user.id %}"> {{ loop.user.username }}</a>
+            </small>
+        </p>      
       </li>
       {% comment %} </a> {% endcomment %}
       <div class="d-inline-block me-2 gap-2">
         {% if loop in liked_loops %}
-          <i class="fas fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
+          <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
         {% else %}
-          <i class="far fa-heart fa-lg like-icon" data-id="{{ loop.id }}" data-type="Loop"></i>
+          <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
         {% endif %}
         <span class="like-count">{{ loop.likes_count }}</span>
       </div>
