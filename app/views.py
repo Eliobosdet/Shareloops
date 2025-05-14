@@ -294,7 +294,7 @@ def like_comment(request, comment_id):
 
 @login_required
 @require_POST  
-def add_comment(request, pk, modeltype):
+def add_comment(request, pk, modeltype, parent_id=None):
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
@@ -304,6 +304,8 @@ def add_comment(request, pk, modeltype):
             comment.user = request.user
             comment.content_type = content_type
             comment.object_id = obj.pk
+            if parent_id:
+                comment.parent = get_object_or_404(Comment, pk=parent_id)
             comment.save()
             messages.success(request, "Commento aggiunto con successo!")
         else:
