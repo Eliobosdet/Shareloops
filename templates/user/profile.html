@@ -86,7 +86,7 @@
               {% comment %} {% include "components/like_container.html"%} {% endcomment %}
               
               <div class="like-container" data-id="{{ load.id }}" data-model="{{ model_name }}">
-                <a href="{% url 'like_upload' pk=load.obj.id modeltype=load.modeltype %}" class="like-button" style="background:none; border:none;">
+                <a href="{% url 'like_uploadable' pk=load.obj.id modeltype=load.modeltype %}" class="like-button" style="background:none; border:none;">
                   <i class="fas fa-heart-o fa-lg"></i>
                   <span class="like-count">{{ load.loops_like.likes_count }}</span>
                 </a>
@@ -102,7 +102,7 @@
                   <a href="" class="btn btn-outline-primary">Modifica2</a>
                 </div>
               {% endif %}
-              <form method="POST" action="{% url 'delete_upload' pk=load.obj.id modeltype=load.modeltype %}">
+              <form method="POST" action="{% url 'delete_uploadable' pk=load.obj.id modeltype=load.modeltype %}">
                 {% csrf_token %}
                 <button type="button" class="btn btn-outline-danger delete-btn">Elimina</button>
               </form>
@@ -139,19 +139,6 @@
       form.submit();
     });
 
-    let formToSubmit = null;
-
-    document.querySelectorAll('.delete-btn').forEach(button => {
-      button.addEventListener('click', function () {
-        formToSubmit = this.closest('form');
-        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
-      });
-    });
-
-    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-      if (formToSubmit) {
-        formToSubmit.submit();
-      }
-    });
+  
   </script>
 {% endblock %}

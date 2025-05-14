@@ -167,6 +167,12 @@ class Comment(models.Model):
     class Meta:
         ordering = ['-created_at']
 
+    def likes_count(self):
+        return self.likes.count()
+
+    def replies_count(self):
+        return self.replies.count()    
+
 class Repost(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)

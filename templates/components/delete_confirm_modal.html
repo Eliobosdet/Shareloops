@@ -15,4 +15,21 @@
       </div>
     </div>
   </div>
+
+<script>
+  let formToSubmit = null;
+
+    document.querySelectorAll('.delete-btn').forEach(button => {
+      button.addEventListener('click', function () {
+        formToSubmit = this.closest('form');
+        new bootstrap.Modal(document.getElementById('deleteConfirmModal')).show();
+      });
+    });
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+      if (formToSubmit) {
+        formToSubmit.submit();
+      }
+    });
+</script>
   

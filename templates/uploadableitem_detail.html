@@ -16,13 +16,13 @@
   <p>Uploaded by: <a href="{% url 'profile' pk=item.user.id %}">{{ item.user.username }}</a></p>
 
   <div class="d-inline-block me-2 gap-2">
-    {% if item in liked_uploadableitems %}
+    {% if request.user in item.likes.all %}
       <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
     {% else %}
       <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
     {% endif %}
     <span class="like-count">{{ item.likes_count }}</span>
-    <form method="post" action="">
+    <form method="post" action="{% url 'add_comment' pk=item.id modeltype=modeltype %}">
       {% csrf_token %}
       {{ commentForm.body }}
       <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>
@@ -44,9 +44,31 @@
           {{ comment.body }}
         </p>
         <br>
-        <p class="text-end">
-          <small>{{ comment.created_at }}</small>
-        </p>
+        <div class="row">
+          <p class="text-start col-6">
+            <small>
+              {% if comment in liked_comments %}
+                <i class="fas fa-heart fa-lg like-icon comment" data-id="{{ comment.id }}" data-type="comment"></i>
+              {% else %}
+                <i class="far fa-heart fa-lg like-icon comment" data-id="{{ comment.id }}" data-type="comment"></i>
+              {% endif %}
+              <span class="like-count">{{ comment.likes_count }}</span>
+              <i class="far fa-comment fa-lg ms-1 "></i>
+              <span class="comment-count">{{ comment.replies_count }}</span>
+            </small>
+          </p>
+          <p class="text-end col-6">
+            <small class="text-muted">
+              {{ comment.created_at|date:"M d, Y H:i" }}
+              {% if comment.user == request.user %}
+                <form method="POST" action="{% url 'delete_comment' pk=comment.id modtype=modeltype upl_pk=item.id %}">
+                {% csrf_token %}
+                <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Elimina</button>
+                </form>              
+              {% endif %}
+            </small>
+          </p>
+          
         <br>
         </div>
 
@@ -60,6 +82,9 @@
           </form>
         </div> {% endcomment %}
     </div>
-{% endfor %}
+
+    {% endfor %}
+    
+    {% include "components/delete_confirm_modal.html"%}
 
 {% endblock %}

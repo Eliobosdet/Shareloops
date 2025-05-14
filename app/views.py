@@ -16,47 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def home(request, *args, **kwargs):
-    tmp_name="home.html"
-    return render(request,tmp_name)
-
-def register_view(request, *args, **kwargs):
-    if request.method == 'POST':
-        form = CustomRegisterForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('home')
-    else:
-        form = CustomRegisterForm()
-    return render(request, 'auth/register.html', {'form': form})
-
-def login_view(request, *args, **kwargs):
-    if request.method == 'POST':
-        form = CustomLoginForm(request, data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            if user is not None:
-                logger.info(f"User {user.username} logged in successfully.")  # Log di debug
-                login(request, user)
-                return redirect('home')
-            else:
-                logger.warning("Form valid but user is None.")
-        else:
-            logger.warning(f"Login form invalid: {form.errors}")
-    else:
-        form = CustomLoginForm()
-    return render(request, 'auth/login.html', {'form': form})
-
-
-def logout_view(request, *args, **kwargs):
-    logout(request)
-    return redirect('home')
-
-def profile_view(request, *args, **kwargs):
-    if request.user.is_authenticated:
-        return render(request, 'user/profile.html', {'user': request.user})
-    else:
-        return redirect('login')
+### CBV ###
 
 class ProfileDetailView(DetailView):
     model = User
@@ -122,38 +82,18 @@ class ProfileDetailView(DetailView):
         print("Rendering response with updated context")
         return self.render_to_response(context)
 
-class LoopDetailView(DetailView):
-    model = Loop
-    template_name = 'loop_detail.html'
-    context_object_name = 'loop'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['profImg'] = getattr(self.object.user, 'profileimage', None)
-        return context
-    
-class SamplePackDetailView(DetailView):
-    model = SamplePack
-    template_name = 'user/samplepack_detail.html'
-    context_object_name = 'samplepack'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['profImg'] = getattr(self.object.user, 'profileimage', None)
-        return context
-
 class GenericDetailView(DetailView):
     template_name = 'uploadableitem_detail.html'
 
 
     def get_object(self):
-        modeltype = self.kwargs.get('modeltype')
+        modeltype = self.kwargs.get('modeltype').lower()
         pk = self.kwargs.get('pk')
 
         # Determina il modello in base al modeltype
-        if modeltype == 'Loop':
+        if modeltype == 'loop':
             model = Loop
-        elif modeltype == 'SamplePack':
+        elif modeltype == 'samplepack':
             model = SamplePack
         else:
             raise ValueError("Modeltype non valido")
@@ -170,6 +110,10 @@ class GenericDetailView(DetailView):
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk
         ).order_by('-created_at')
+        if self.request.user.is_authenticated:
+            context['liked_comments'] = self.request.user.likes_comments.all()
+        else:
+            context['liked_comments'] = []
         return context
 
 class LoopsListView(ListView):
@@ -189,6 +133,51 @@ class SamplePacksListView(ListView):
     model = SamplePack
     template_name = 'samplepacks.html'
     context_object_name = 'samplepacks'
+
+### FBV ###
+
+def home(request, *args, **kwargs):
+    tmp_name="home.html"
+    return render(request,tmp_name)
+
+def register_view(request, *args, **kwargs):
+    if request.method == 'POST':
+        form = CustomRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('home')
+    else:
+        form = CustomRegisterForm()
+    return render(request, 'auth/register.html', {'form': form})
+
+def login_view(request, *args, **kwargs):
+    if request.method == 'POST':
+        form = CustomLoginForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if user is not None:
+                logger.info(f"User {user.username} logged in successfully.")  # Log di debug
+                login(request, user)
+                return redirect('home')
+            else:
+                logger.warning("Form valid but user is None.")
+        else:
+            logger.warning(f"Login form invalid: {form.errors}")
+    else:
+        form = CustomLoginForm()
+    return render(request, 'auth/login.html', {'form': form})
+
+
+def logout_view(request, *args, **kwargs):
+    logout(request)
+    return redirect('home')
+
+def profile_view(request, *args, **kwargs):
+    if request.user.is_authenticated:
+        return render(request, 'user/profile.html', {'user': request.user})
+    else:
+        return redirect('login')
+
 
 @login_required
 @require_POST
@@ -238,7 +227,7 @@ def upload_samplepack(request):
 
 @login_required
 @require_POST
-def delete_upload_view(request, pk, modeltype):
+def delete_uploadable(request, pk, modeltype):
     if modeltype == 'Loop':
         load = get_object_or_404(Loop, pk=pk, user=request.user)
     elif modeltype == 'SamplePack':
@@ -252,7 +241,7 @@ def delete_upload_view(request, pk, modeltype):
     return redirect('profile')
 
 @login_required
-def like_upload(request, modeltype, pk):
+def like_uploadable(request, modeltype, pk):
     if request.method == "POST":
         # Recupera il modello dinamicamente
         try:
@@ -302,3 +291,32 @@ def like_comment(request, comment_id):
         })
 
     return JsonResponse({"error": "Metodo non consentito"}, status=405)
+
+@login_required
+@require_POST  
+def add_comment(request, pk, modeltype):
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            content_type = ContentType.objects.get(model=modeltype.lower())
+            obj = get_object_or_404(content_type.model_class(), pk=pk)
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.content_type = content_type
+            comment.object_id = obj.pk
+            comment.save()
+            messages.success(request, "Commento aggiunto con successo!")
+        else:
+            messages.error(request, "Errore nel commento.")
+    return redirect('uploadable_detail', modeltype=modeltype, pk=pk)
+
+@login_required
+@require_POST  
+def delete_comment(request, pk, modtype, upl_pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    if request.user == comment.user:
+        comment.delete()
+        messages.success(request, "Commento eliminato con successo!")
+    else:
+        messages.error(request, "Non puoi eliminare questo commento.")
+    return redirect('uploadable_detail', modeltype=modtype, pk=upl_pk)
