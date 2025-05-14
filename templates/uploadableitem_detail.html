@@ -32,7 +32,7 @@
   <h3>Comments</h3>
 
 {% for comment in comments %}
-    <div class="row mt-3 border p-3 shadow-sm bg-light">
+    <div class="row mt-3 border p-3 shadow-sm bg-light comment-container">
       <div class="d-inline align-middle p-2 mb-2">
         <a href="{% url 'profile' pk=comment.user.id %}" class="text-decoration-none text-dark">
         <img src="{{ comment.user.profileimage.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
@@ -45,7 +45,8 @@
         </p>
         <br>
         <div class="row">
-          <p class="text-start col-6">
+          <div class="col-1">
+          <p class="text-start">
             <small>
               {% if comment in liked_comments %}
                 <i class="fas fa-heart fa-lg like-icon comment" data-id="{{ comment.id }}" data-type="comment"></i>
@@ -54,20 +55,32 @@
               {% endif %}
               <span class="like-count">{{ comment.likes_count }}</span>
               <i class="far fa-comment fa-lg ms-1 comment_reply"></i>
-              <span class="comment-count">{{ comment.replies_count }}</span>
+              <span class="reply-count">{{ comment.replies_count }}</span>
             </small>
           </p>
-          <p class="text-end col-6">
-            <small class="text-muted">
-              {{ comment.created_at|date:"M d, Y H:i" }}
-              {% if comment.user == request.user %}
-                <form method="POST" action="{% url 'delete_comment' pk=comment.id modtype=modeltype upl_pk=item.id %}">
+          </div>
+          <div class="col-6">
+              <form method="post" action="{% url 'add_comment_with_parent' pk=item.id modeltype=modeltype parent_id=comment.id %}" class="d-none reply-form">
                 {% csrf_token %}
-                <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Elimina</button>
+                {{ commentForm.body }}
+                <button type="submit" class="btn btn-primary btn-sm ms-2">Reply</button>
+              </form>
+          </div>
+          <div class="col-4">
+            <p class="text-end">
+              <small class="text-muted">
+                {{ comment.created_at|date:"M d, Y H:i" }}
+              </small>
+            </p>
+          </div>
+          <div class="col-1 text-end">
+          {% if comment.user == request.user %}
+                <form method="POST" action="{% url 'delete_comment' pk=comment.id modtype=modeltype upl_pk=item.id %}">
+                  {% csrf_token %}
+                  <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Elimina</button>
                 </form>              
               {% endif %}
-            </small>
-          </p>
+          </div>
           
         <br>
         </div>
@@ -88,25 +101,24 @@
     {% include "components/delete_confirm_modal.html"%}
 
     <script>
-      const replyCommentButtons = document.querySelectorAll('.comment_reply');
-      replyCommentButtons.forEach(button => {
+      document.querySelectorAll('.comment_reply').forEach(button => {
         button.addEventListener('click', function() {
-          const commentId = this.closest('.row').querySelector('i.comment').dataset.id; // Ottieni l'ID del commento
-          const replyForm = this.closest('.row').querySelector('form');
+          console.log('Reply button clicked');
+          const replyForm = this.closest('.row').querySelector('.reply-form');
           if (replyForm) {
-            replyForm.classList.toggle('d-none');
-          } else {
-            const newForm = document.createElement('form');
-            newForm.method = 'post';
-            newForm.action = `/add/comment/${item.id}/${modeltype}/${commentId}/`; // Costruisci l'URL dinamicamente
-            newForm.innerHTML = `
-                        {% csrf_token %}
-                        {{ commentForm.body }}
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>`
-            this.closest('.row').appendChild(newForm);
+            console.log('Reply form found');
+            if (replyForm.classList.contains('d-none')) {
+              replyForm.classList.remove('d-none');
+              replyForm.classList.add('d-flex');
+                const username = this.closest('.comment-container').querySelector('h5').textContent.trim();
+                replyForm.querySelector('textarea').value = `@${username} `;
+            } else {
+              replyForm.classList.remove('d-flex');
+              replyForm.classList.add('d-none');
+            }
           }
         });
-      });
+      });    
     </script>
 
 {% endblock %}

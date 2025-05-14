@@ -138,7 +138,8 @@ class SamplePacksListView(ListView):
 
 def home(request, *args, **kwargs):
     tmp_name="home.html"
-    return render(request,tmp_name)
+    uploads = get_ordered_loads()
+    return render(request,tmp_name, {'uploads': uploads})
 
 def register_view(request, *args, **kwargs):
     if request.method == 'POST':

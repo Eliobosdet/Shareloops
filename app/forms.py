@@ -95,5 +95,10 @@ class CommentForm(forms.ModelForm):
         model = Comment
         fields = ['body']
         widgets = {
-            'body': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Write a comment...'}),
+            'body': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'placeholder': 'Write a comment...', 
+                'rows': 1  # Set the maximum number of rows
+            }),
         }
+        

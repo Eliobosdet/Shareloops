@@ -6,5 +6,23 @@
 
 {% block content %}
     {{ block.super }}
+    <div class="container ">
     <h1 class="text-center mt-5">Welcome {{user.username}}</h1>
-{% endblock %}
+    <hr>
+        <h2>Uploadable Items</h2>
+        <div class="row">
+            {% for item in uploads %}
+                <div class="col-12 mb-4">
+                    <div class="card col-6 align-self-center">
+                        <img src="{{ item.obj.cover_image.url }}" class="card-img-top " alt="{{ item.obj.title }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.obj.title }}</h5>
+                            <p class="card-text">{{ item.obj.description }}</p>
+                            <p class="card-text"><small class="text-muted">Uploaded by {{ item.obj.user.username }}</small></p>
+                            <a href="{% url 'uploadable_detail' modeltype=item.modeltype pk=item.obj.id %}" class="btn btn-primary">View Details</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        {% endblock %}

@@ -38,6 +38,7 @@ urlpatterns = [
     path('like/<int:pk>/<str:modeltype>/', views.like_uploadable, name='like_uploadable'),
     path('delete/load/<int:pk>/<str:modeltype>/', views.delete_uploadable, name='delete_uploadable'),
     path('add/comment/<int:pk>/<str:modeltype>/', views.add_comment, name='add_comment'),
-    path('add/comment/<int:pk>/<str:modeltype>/<int:id_parent>/', views.add_comment, name='add_comment_with_parent'),    path('like/<int:pk>/comment/', views.like_comment, name='like_comment'),
+    path('add/comment/<int:pk>/<str:modeltype>/<int:parent_id>/', views.add_comment, name='add_comment_with_parent'),    
+    path('like/<int:pk>/comment/', views.like_comment, name='like_comment'),
     path('delete/comment/<int:pk>/<str:modtype>/<int:upl_pk>', views.delete_comment, name='delete_comment'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
