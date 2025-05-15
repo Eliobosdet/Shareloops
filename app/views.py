@@ -201,12 +201,20 @@ def upload_loop(request):
             loop = form.save(commit=False)
             loop.user = request.user
             loop.save()
-            url = reverse('loop_detail', args=[loop.id])
+
+            tag_input = form.cleaned_data.get('tags_input', '')
+            tag_names = [t.strip().lower() for t in tag_input.split(',') if t.strip()]
+            for tag_name in tag_names:
+                tag, _ = Tag.objects.get_or_create(name=tag_name)
+                loop.tags.add(tag)
+
+            url = reverse('loop_detail', args=["loop",loop.id])
             messages.success(
                 request,
                 f'Prodotto "{loop.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
                 extra_tags='safe'
             )
+
             form = LoopForm()
     else:
         form = LoopForm()
@@ -217,11 +225,24 @@ def upload_samplepack(request):
     if request.method == 'POST':
         form = SamplePackForm(request.POST, request.FILES)
         if form.is_valid():
-            loop = form.save(commit=False)
-            loop.user = request.user
-            loop.save()
-            messages.success(request, 'SamplePack uploaded successfully!')
-            return redirect('home')
+            samplepack = form.save(commit=False)
+            samplepack.user = request.user
+            samplepack.save()
+
+            tag_input = form.cleaned_data.get('tags_input', '')
+            tag_names = [t.strip().lower() for t in tag_input.split(',') if t.strip()]
+            for tag_name in tag_names:
+                tag, _ = Tag.objects.get_or_create(name=tag_name)
+                samplepack.tags.add(tag)
+
+            url = reverse('uploadable_detail', args=["samplepack",samplepack.id])
+            messages.success(
+                request, 
+                f'Prodotto "{samplepack.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
+                extra_tags='safe'
+            )
+
+            form = SamplePackForm()
     else:
         form = SamplePackForm()
     return render(request, 'user/upload_samplepack.html', {'form': form})

@@ -92,20 +92,22 @@
                 </a>
               </div>
 
-              
-              {% if load.modeltype == 'Loop'%}
-                <div class="d-flex justify-content-end gap-2">
-                  <a href="" class="btn btn-outline-primary">Modifica1</a>
-                </div>
-              {% elif load.modeltype == 'SamplePack' %}
-                <div class="d-flex justify-content-end gap-2">
-                  <a href="" class="btn btn-outline-primary">Modifica2</a>
-                </div>
+              {% if request.user.id == user.id%}
+                {% if load.modeltype == 'Loop'%}
+                  <div class="d-flex justify-content-end gap-2">
+                    <a href="" class="btn btn-outline-primary">Modifica1</a>
+                  </div>
+                {% elif load.modeltype == 'SamplePack' %}
+                  <div class="d-flex justify-content-end gap-2">
+                    <a href="" class="btn btn-outline-primary">Modifica2</a>
+                  </div>
+                {% endif %}
+                <form method="POST" action="{% url 'delete_uploadable' pk=load.obj.id modeltype=load.modeltype %}">
+                  {% csrf_token %}
+                  <button type="button" class="btn btn-outline-danger delete-btn">Elimina</button>
+                </form>
               {% endif %}
-              <form method="POST" action="{% url 'delete_uploadable' pk=load.obj.id modeltype=load.modeltype %}">
-                {% csrf_token %}
-                <button type="button" class="btn btn-outline-danger delete-btn">Elimina</button>
-              </form>
+              
             </li>
             {% endfor %}
            </ul>

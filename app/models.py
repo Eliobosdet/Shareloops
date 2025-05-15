@@ -8,6 +8,12 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from functools import partial
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
 def validate_image_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in ['.jpg', '.jpeg', '.png']:
@@ -25,7 +31,7 @@ class UploadableItem(models.Model):
     cover_image = models.ImageField(
         validators=[validate_image_extension, validate_coverimage_size]
     )
-    tags = models.CharField(max_length=255, blank=True, null=True)
+    tags = models.ManyToManyField(Tag, related_name='items_%(class)s', blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='likes_%(class)s', blank=True)
     class Meta:

@@ -24,27 +24,27 @@
         <p>{{ loop.description }}</p>
         <hr>
         <p class="text-end">
-          <small>{{ loop.created_at }}</small>
-          <br>
             <small>
             <img src="{{ loop.user.profileimage.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
             <a href="{% url 'profile' pk=loop.user.id %}"> {{ loop.user.username }}</a>
             </small>
         </p>      
       </li>
-      {% comment %} </a> {% endcomment %}
       <div class="d-inline-block me-2 gap-2">
-        {% if loop in liked_loops %}
-          <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
-        {% else %}
-          <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
-        {% endif %}
-        <span class="like-count">{{ loop.likes_count }}</span>
-      </div>
-
-      <div class="d-inline-block gap-2">
-        <a href="{% url 'uploadable_detail' modeltype='Loop' pk=loop.id %}"><i class="far fa-comment fa-lg"></i></a>
-        <span class="comment-count">{{ loop.comments_count }}</span>
+        <p class="text-start">
+          {% if loop in liked_loops %}
+            <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
+          {% else %}
+            <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ loop.id }}" data-type="Loop"></i>
+          {% endif %}
+          <span class="like-count">{{ loop.likes_count }}</span>
+        
+          <a href="{% url 'uploadable_detail' modeltype='Loop' pk=loop.id %}"><i class="far fa-comment fa-lg"></i></a>
+          <span class="comment-count">{{ loop.comments_count }}</span>
+        </p>
+        <p class="text-end">
+          {{ loop.tags }}
+        </p>
       </div>
     </div>
       {% empty %}
