@@ -1,14 +1,85 @@
 {% extends "base.html"%}
 
-{% block title %}Upload Loop{% endblock %}
-{% block content %}
-{{ block.super }} 
-<div class="container mt-5">
-  <h1>Upload SamplePack</h1>
-  <form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Upload</button>
-  </form>
-</div>
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Upload SamplePack{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script src="{% static 'tags.js' %}"></script>
 {% endblock %}
+
+{% block content%}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="card-title mb-4 text-center">Upload SamplePack</h2>
+            <form method="post" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors }}
+                </div>
+              {% endif %}
+
+              <div class="mb-3">
+                {{ form.title.label_tag }}
+                {{ form.title|add_class:"form-control" }}
+                {% if form.title.errors %}
+                  <div class="text-danger small">{{ form.title.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.description.label_tag }}
+                {{ form.description|add_class:"form-control" }}
+                {% if form.description.errors %}
+                  <div class="text-danger small">{{ form.description.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.cover_image.label_tag }}
+                {{ form.cover_image|add_class:"form-control" }}
+                {% if form.cover_image.errors %}
+                  <div class="text-danger small">{{ form.cover_image.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                <label for="id_tags" class="form-label">Tags</label>
+                <input name="tags" id="id_tags" value="" placeholder="Scrivi i tag..." class="form-control">
+              </div>
+              <div class="mb-3">
+                {{ form.audio_file.label_tag }}
+                {{ form.audio_file|add_class:"form-control" }}
+                {% if form.audio_file.errors %}
+                  <div class="text-danger small">{{ form.audio_file.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.zip_file.label_tag }}
+                {{ form.zip_file|add_class:"form-control" }}
+                {% if form.zip_file.errors %}
+                  <div class="text-danger small">{{ form.zip_file.errors }}</div>
+                {% endif %}
+              </div>
+              <div class="mb-3">
+                {{ form.preview_audio.label_tag }}
+                {{ form.preview_audio|add_class:"form-control" }}
+                {% if form.preview_audio.errors %}
+                  <div class="text-danger small">{{ form.preview_audio.errors }}</div>
+                {% endif %}
+              </div>
+              <button type="submit" class="btn btn-primary w-100">Upload</button>
+              </form>
+              </div>
+              </div>
+              </div>
+              </div>
+
+              
+              
+              
+              {% endblock %}
