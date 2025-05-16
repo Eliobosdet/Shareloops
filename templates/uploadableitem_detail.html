@@ -13,6 +13,11 @@
     <source src="{{ item.audio_file.url }}" type="audio/mpeg">
   </audio>
   <p>{{ item.description }}</p>
+  {% if item.bpm %}
+    <p>BPM: {{ item.bpm }}</p>
+  {% endif %}
+  <p>Tags: {{ item.tags }}</p>
+  <p>Uploaded at: {{ item.uploaded_at|date:"d M Y H:i" }}</p>
   <p>Uploaded by: <a href="{% url 'profile' pk=item.user.id %}">{{ item.user.username }}</a></p>
 
   <div class="d-inline-block me-2 gap-2">

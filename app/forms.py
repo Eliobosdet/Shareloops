@@ -81,11 +81,17 @@ class ProfileImageUpdateForm(forms.ModelForm):
         fields = ['image']
 
 class LoopForm(forms.ModelForm):
+    tags = forms.CharField(required=False)
+
     class Meta:
         model = Loop
-        fields = ['title', 'description', 'audio_file', 'tags', 'bpm', 'key', 'time_signature', 'genre', 'cover_image']
-
+        fields = [
+                    'title', 'description', 'audio_file', 'tags', 'bpm', 'key',
+                    'time_signature_num', 'time_signature_den', 'genre', 'cover_image'
+                ]
 class SamplePackForm(forms.ModelForm):
+    tags = forms.CharField(required=False)
+    
     class Meta:
         model = SamplePack
         fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio', 'tags']

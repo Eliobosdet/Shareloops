@@ -72,14 +72,16 @@
         {% endif %}
 
         {% comment %} {% if loads|length == 0 %} {% endcomment %}
-          <ul class="list-group">
+          <div class="container">
             {% for load in loads %}
-            <li class="mb-4 border p-3 shadow-sm bg-light">
+            <div class="mb-4 border p-3 shadow-sm bg-light">
               {% comment %} <a href="{% url 'loop_detail' load.id %}"> {% endcomment %}
-              <img src="{{ load.obj.cover_image.url }}" alt="(Load Image)" width="100" height="100" />
+              <a href="{% url 'uploadable_detail' modeltype=load.modeltype pk=load.obj.id %}">
+                <img src="{{ load.obj.cover_image.url }}" alt="(Load Image)" width="100" height="100" />
+              </a>
               <h4>{{ load.obj.title }}</h4>
               <p>{{ load.obj.description }}</p>
-                <p>Uploaded at: {{ load.obj.uploaded_at|date:"d M Y H:i" }}</p>
+              <p>Uploaded at: {{ load.obj.uploaded_at|date:"d M Y H:i" }}</p>
               {% comment %} <audio controls>
                   <source src="{{ loop.audio.url }}" type="audio/mpeg">
               </audio> {% endcomment %}
@@ -108,9 +110,9 @@
                 </form>
               {% endif %}
               
-            </li>
+            </div>
             {% endfor %}
-           </ul>
+          </div>
       </div>
     </div>
 </div>

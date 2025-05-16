@@ -7,6 +7,14 @@ from django.db.models.signals import pre_delete, post_save
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from functools import partial
+from .keys import KEY_CHOICES
+from django.core.validators import MaxValueValidator, MinValueValidator
+
+class Genre(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -73,11 +81,19 @@ class Loop(UploadableItem):
         upload_to=loop_audio_upload_path,
         validators=[validate_audio_extension, validate_fileMB_size_10]
     )
-    key = models.CharField(max_length=10, blank=True, null=True)
-    bpm = models.PositiveIntegerField(blank=True, null=True)
-    genre = models.CharField(max_length=100, blank=True, null=True)
-    time_signature = models.CharField(max_length=10, blank=True, null=True)
-    
+    key = models.CharField(max_length=10, choices=KEY_CHOICES, blank=True, null=True)
+    bpm = models.PositiveIntegerField(
+            blank=True,
+            null=True,
+            validators=[
+                MinValueValidator(0),
+                MaxValueValidator(999)
+            ]
+        )
+    genre = models.ForeignKey(Genre, on_delete=models.SET_NULL, null=True, blank=True)
+    time_signature_num = models.PositiveIntegerField(blank=True, null=True, default=4)
+    time_signature_den = models.PositiveIntegerField(blank=True, null=True, default=4)
+
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 

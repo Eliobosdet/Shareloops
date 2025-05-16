@@ -208,7 +208,7 @@ def upload_loop(request):
                 tag, _ = Tag.objects.get_or_create(name=tag_name)
                 loop.tags.add(tag)
 
-            url = reverse('loop_detail', args=["loop",loop.id])
+            url = reverse('uploadable_detail', args=["loop",loop.id])
             messages.success(
                 request,
                 f'Prodotto "{loop.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
@@ -256,11 +256,11 @@ def delete_uploadable(request, pk, modeltype):
         load = get_object_or_404(SamplePack, pk=pk, user=request.user)
     else:
         messages.error(request, "Invalid model type.")
-        return redirect('profile')
+        return redirect('profile', pk=request.user.pk)
 
     load.delete()
     messages.success(request, f"{modeltype} deleted successfully!")
-    return redirect('profile')
+    return redirect('profile', pk=request.user.pk)
 
 @login_required
 def like_uploadable(request, modeltype, pk):
