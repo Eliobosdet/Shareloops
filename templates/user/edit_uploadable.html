@@ -1,0 +1,169 @@
+{% extends "base.html"%}
+
+{% load widget_tweaks %}
+{% load static %}
+
+{% block title %}Edit Uploadble{% endblock %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css">
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script src="{% static 'tags.js' %}"></script>
+{% endblock %}
+
+{% block content%}
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <h2 class="card-title mb-4 text-center">Edit Uploadble</h2>
+            <form method="post" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
+              {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                  {{ form.non_field_errors }}
+                </div>
+              {% endif %}
+
+              <div class="mb-3">
+                {{ form.title.label_tag }}
+                {{ form.title|add_class:"form-control" }}
+                {% if form.title.errors %}
+                  <div class="text-danger small">{{ form.title.errors }}</div>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                {{ form.description.label_tag }}
+                {{ form.description|add_class:"form-control" }}
+                {% if form.description.errors %}
+                  <div class="text-danger small">{{ form.description.errors }}</div>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                {{ form.cover_image.label_tag }}
+                {{ form.cover_image|add_class:"form-control" }}
+                {% if form.cover_image.errors %}
+                  <div class="text-danger small">{{ form.cover_image.errors }}</div>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                <label for="id_tags" class="form-label">Tags</label>
+                <input name="tags" id="id_tags" value="" placeholder="Scrivi i tag..." class="form-control">
+              </div>
+
+              <div class="mb-3">
+                {{ form.audio_file.label_tag }}
+                {{ form.audio_file|add_class:"form-control" }}
+                {% if form.audio_file.errors %}
+                  <div class="text-danger small">{{ form.audio_file.errors }}</div>
+                {% endif %}
+              </div>
+              
+              <div class="mb-3">
+                {{ form.key.label_tag }}
+                {{ form.key|add_class:"form-control" }}
+                {% if form.key.errors %}
+                  <div class="text-danger small">{{ form.key.errors }}</div>
+                {% endif %}
+              </div>
+
+                <div class="mb-3">
+                {{ form.bpm.label_tag }}
+                {{ form.bpm|add_class:"form-control" }}
+                {% if form.bpm.errors %}
+                  <div class="text-danger small">{{ form.bpm.errors }}</div>
+                {% endif %}
+                </div>
+              <div class="mb-3">
+                <label for="{{ form.genre.id_for_label }}" class="form-label">Genere</label>
+                {{ form.genre|add_class:"form-control" }}
+                {% if form.genre.errors %}
+                  <div class="text-danger small">{{ form.genre.errors }}</div>
+                {% endif %}
+              </div>
+
+                <!-- time signature numerator and denominator -->
+                <div class="mb-3 d-flex align-items-end">
+                <div class="me-2 flex-grow-1">
+                  <label for="{{ form.time_signature_num.id_for_label }}" class="form-label">Time Signature</label>
+                  {{ form.time_signature_num|add_class:"form-control" }}
+                  {% if form.time_signature_num.errors %}
+                  <div class="text-danger small">{{ form.time_signature_num.errors }}</div>
+                  {% endif %}
+                </div>
+                <span class="mb-2">/</span>
+                <div class="ms-2 flex-grow-1">
+                  <label for="{{ form.time_signature_den.id_for_label }}" class="form-label visually-hidden">Denominator</label>
+                  {{ form.time_signature_den|add_class:"form-control" }}
+                  {% if form.time_signature_den.errors %}
+                  <div class="text-danger small">{{ form.time_signature_den.errors }}</div>
+                  {% endif %}
+                </div>
+                </div>
+              
+              <div class="d-flex justify-content-center gap-3">
+                <button type="submit" name="action" value="back" class="btn btn-secondary col-6">Back</button>
+                <button type="submit" name="action" value="save" class="btn btn-primary col-6" disabled>Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tagify JS + CSS -->
+  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+  <script>
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const saveBtn = form.querySelector('button[type="submit"][value="save"]');
+        form.addEventListener('input', function() {
+            saveBtn.disabled = false;
+    });
+    });
+    
+      const input = document.querySelector('input[name=tags]');
+      const tagify = new Tagify(input, {
+          whitelist: [],
+          dropdown: {
+              enabled: 1,
+              classname: 'tags-look',
+              maxItems: 10,
+              position: 'text',
+              closeOnSelect: false,
+          }
+      });
+
+      // Autocomplete AJAX
+      tagify.on('input', function(e){
+          let value = e.detail.value;
+          fetch(`/api/tags/?q=${value}`)
+              .then(res => res.json())
+              .then(data => {
+                  tagify.settings.whitelist = data.map(obj => obj.value);
+                  tagify.dropdown.show.call(tagify, value); // show the suggestions
+              });
+      });
+
+      document.addEventListener('DOMContentLoaded', function() {
+                  const bpmInput = document.getElementById('{{ form.bpm.id_for_label }}');
+                  if (bpmInput) {
+                  bpmInput.addEventListener('input', function() {
+                    if (parseInt(bpmInput.value, 10) > 999) {
+                    bpmInput.value = 999;
+                    } else if (parseInt(bpmInput.value, 10) < 0) {
+                    bpmInput.value = 0;
+                    }
+                  });
+                  }
+                });
+
+    
+  </script>
+{% endblock %}

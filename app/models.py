@@ -7,6 +7,7 @@ from django.db.models.signals import pre_delete, post_save
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from functools import partial
+from PIL import Image
 from .keys import KEY_CHOICES
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -44,6 +45,20 @@ class UploadableItem(models.Model):
     likes = models.ManyToManyField(User, related_name='likes_%(class)s', blank=True)
     class Meta:
         abstract = True
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+        # Resize automatico solo se è una nuova immagine o cambiata
+        if self.cover_image:
+            try:
+                img_path = self.cover_image.path
+                img = Image.open(img_path)
+                max_size = (800, 800)  # es. max 800x800 px
+                img.thumbnail(max_size, Image.ANTIALIAS)
+                img.save(img_path)
+            except Exception as e:
+                print(f"Errore nel ridimensionamento immagine: {e}")
 
     def likes_count(self):
         return self.likes.count()

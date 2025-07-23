@@ -33,6 +33,7 @@ urlpatterns = [
     path('upload/', views.upload, name='upload'),
     path('upload/loop', views.upload_loop, name='uploadloop'),
     path('upload/samplepack', views.upload_samplepack, name='uploadsamplepack'),
+    path('edit/<str:modeltype>/<int:pk>/', views.edit_uploadable, name='edit_uploadable'),
     path('loops/', views.LoopsListView.as_view(), name='loops_list'),
     path('samplepacks/', views.SamplePacksListView.as_view(), name='samplepacks_list'),
     path('like/<int:pk>/<str:modeltype>/', views.like_uploadable, name='like_uploadable'),

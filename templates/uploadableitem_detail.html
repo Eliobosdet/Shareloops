@@ -16,7 +16,13 @@
   {% if item.bpm %}
     <p>BPM: {{ item.bpm }}</p>
   {% endif %}
-  <p>Tags: {{ item.tags }}</p>
+  <p>
+    {% for tag in item.tags.all %}
+    <span class="badge bg-secondary">{{ tag.name }}</span>
+    {% empty %}
+        <span class="text-muted">No tags</span>
+    {% endfor %}
+</p>
   <p>Uploaded at: {{ item.uploaded_at|date:"d M Y H:i" }}</p>
   <p>Uploaded by: <a href="{% url 'profile' pk=item.user.id %}">{{ item.user.username }}</a></p>
 

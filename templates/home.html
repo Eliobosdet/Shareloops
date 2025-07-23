@@ -12,9 +12,9 @@
         <h2>Uploadable Items</h2>
         <div class="row">
             {% for item in uploads %}
-                <div class="col-12 mb-4">
-                    <div class="card col-6 ">
-                        <img src="{{ item.obj.cover_image.url }}" class="card-img-top " alt="{{ item.obj.title }}">
+                <div class="col-md-6 col-lg-4 mb-4">  <!-- massimo 3 card per riga su desktop -->
+                    <div class="card h-100">
+                        <img src="{{ item.obj.cover_image.url }}" class="card-img-top img-fluid" style="object-fit: cover; height: 250px;" alt="{{ item.obj.title }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ item.obj.title }}</h5>
                             <p class="card-text">{{ item.obj.description }}</p>

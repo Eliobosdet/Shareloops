@@ -202,11 +202,10 @@ def upload_loop(request):
             loop.user = request.user
             loop.save()
 
-            tag_input = form.cleaned_data.get('tags_input', '')
-            tag_names = [t.strip().lower() for t in tag_input.split(',') if t.strip()]
-            for tag_name in tag_names:
-                tag, _ = Tag.objects.get_or_create(name=tag_name)
-                loop.tags.add(tag)
+            tag_input = form.cleaned_data.get('tags', '')
+            tag_names = [t.strip().lower().replace(' ', '') for t in tag_input.split(',') if t.strip()]
+            tags = [Tag.objects.get_or_create(name=name)[0] for name in tag_names]
+            loop.tags.set(tags)
 
             url = reverse('uploadable_detail', args=["loop",loop.id])
             messages.success(
@@ -246,6 +245,39 @@ def upload_samplepack(request):
     else:
         form = SamplePackForm()
     return render(request, 'user/upload_samplepack.html', {'form': form})
+
+@login_required
+def edit_uploadable(request, pk, modeltype):
+    template = 'user/edit_uploadable.html'
+    if modeltype == 'Loop':
+        obj = get_object_or_404(Loop, pk=pk, user=request.user)
+        form_class = LoopForm
+        context_name = 'loop'
+    elif modeltype == 'SamplePack':
+        obj = get_object_or_404(SamplePack, pk=pk, user=request.user)
+        form_class = SamplePackForm
+        context_name = 'samplepack'
+    else:
+        messages.error(request, "Invalid model type.")
+        return redirect('profile', pk=request.user.pk)
+
+    if request.method == 'POST':
+        # Check if the button pressed is "back"
+        if request.POST.get('action') == 'back':
+            return redirect('profile', pk=request.user.pk)
+        form = form_class(request.POST, request.FILES, instance=obj)
+        if form.is_valid():
+            form = form.save(commit=False)
+            url = reverse('uploadable_detail', args=[modeltype.lower(), form.id])
+            messages.success(
+                request, 
+                f'Prodotto "{form.title}" modificato con successo! <a href="{url}">Visualizza prodotto</a>',
+                extra_tags='safe'
+            )
+            return redirect('profile', pk=request.user.id)
+    else:
+        form = form_class(instance=obj)
+    return render(request, template, {'form': form, context_name: obj})
 
 @login_required
 @require_POST
