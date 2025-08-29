@@ -43,7 +43,11 @@
           <span class="comment-count">{{ loop.comments_count }}</span>
         </p>
         <p class="text-end">
-          {{ loop.tags }}
+          {% for tag in loop.tags.all %}
+            <a href="#" class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+            {% empty %}
+                <span class="text-muted">No tags</span>
+            {% endfor %}
         </p>
       </div>
     </div>

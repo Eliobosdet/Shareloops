@@ -118,8 +118,8 @@
   <!-- Tagify JS + CSS -->
   <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
   <script>
-      const input = document.querySelector('input[name=tags]');
-      const tagify = new Tagify(input, {
+      {% comment %} const input = document.querySelector('input[name=tags]'); {% endcomment %}
+      {% comment %} const tagify = new Tagify(input, {
           whitelist: [],
           dropdown: {
               enabled: 1,
@@ -139,7 +139,7 @@
                   tagify.settings.whitelist = data.map(obj => obj.value);
                   tagify.dropdown.show.call(tagify, value); // show the suggestions
               });
-      });
+      }); {% endcomment %}
 
       document.addEventListener('DOMContentLoaded', function() {
                   const bpmInput = document.getElementById('{{ form.bpm.id_for_label }}');

@@ -51,6 +51,9 @@
               </div>
 
               <div class="mb-3">
+                {% for tag in obj.tags.all %}
+                  <span>{{ tag.name }}</span>
+                {% endfor %}
                 <label for="id_tags" class="form-label">Tags</label>
                 <input name="tags" id="id_tags" value="" placeholder="Scrivi i tag..." class="form-control">
               </div>
@@ -107,7 +110,7 @@
               
               <div class="d-flex justify-content-center gap-3">
                 <button type="submit" name="action" value="back" class="btn btn-secondary col-6">Back</button>
-                <button type="submit" name="action" value="save" class="btn btn-primary col-6" disabled>Save</button>
+                <button type="submit" name="action" value="save" class="btn btn-primary col-6">Save</button>
               </div>
             </form>
           </div>

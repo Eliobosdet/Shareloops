@@ -3,6 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import *
+from .keys import KEY_CHOICES
 # from crispy_forms.helper import FormHelper
 # from crispy_forms.layout import Layout, Row, Column, Submit
 
@@ -107,4 +108,28 @@ class CommentForm(forms.ModelForm):
                 'rows': 1  # Set the maximum number of rows
             }),
         }
+
+class FilterForm(forms.Form):
+    tags = forms.ModelChoiceField(
+        queryset=Tag.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    key = forms.ChoiceField(
+        choices=KEY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    bpm = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'BPM'})
+    )
+
+    genre = forms.ModelChoiceField(
+        queryset=Genre.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
         

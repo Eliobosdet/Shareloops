@@ -268,6 +268,7 @@ def edit_uploadable(request, pk, modeltype):
         form = form_class(request.POST, request.FILES, instance=obj)
         if form.is_valid():
             form = form.save(commit=False)
+            obj.save()
             url = reverse('uploadable_detail', args=[modeltype.lower(), form.id])
             messages.success(
                 request, 
