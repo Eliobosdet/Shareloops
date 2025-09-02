@@ -25,61 +25,44 @@ class ProfileDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # context['loops'] = self.object.loops.all()
-        context['profImg'] = getattr(self.object, 'profileimage', None)
-        context['profForm'] = ProfileImageUpdateForm()
+        # Ottieni o crea il profilo
+        profile, created = UserProfile.objects.get_or_create(user=self.object)
+        context['profImg'] = profile
+        # ✅ Popola il form con l'istanza esistente
+        context['profForm'] = ProfileUpdateForm(instance=profile)
         context['loads'] = get_ordered_loads(self.object)
         return context
-
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        return obj
     
     def post(self, request, *args, **kwargs):
-        print("Entering ProfileDetailView.post method")
         self.object = self.get_object()
-        print(f"Retrieved object: {self.object}")
 
-        # Verifica autorizzazione
         if self.object != request.user:
-            print(f"Unauthorized access attempt by user: {request.user}")
             messages.error(request, "Non autorizzato")
             return redirect('profile', pk=request.user.pk)
 
-        profile_image, created = ProfileImage.objects.get_or_create(user=self.object)
-        print(f"ProfileImage object: {profile_image}, Created: {created}")
-        profile_image.refresh_from_db()
-        old_image = profile_image.image 
-        print(f"old image: {old_image.path}")
-        form = ProfileImageUpdateForm(request.POST, request.FILES, instance=profile_image)
-        print(f"Form initialized: {form}")
+        profile, created = UserProfile.objects.get_or_create(user=self.object)  # Aggiorna nome modello
+        old_image = profile.image 
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
 
         if form.is_valid():
-            print("Form is valid")
             try:
                 # Elimina la vecchia immagine solo se diversa da quella default
                 if (old_image and 
                     old_image.name != 'defaultProfileImage.jpg' and 
                     os.path.exists(old_image.path)):
-                    # Elimina il file fisico
-                    print(f"Deleting old image: {old_image.path}")
                     os.remove(old_image.path)
                 
                 form.save()
-                print("Profile image updated successfully")
-                messages.success(request, "Immagine aggiornata!")
+                messages.success(request, "Profilo aggiornato!")
                 return redirect('profile', pk=self.object.id)
                 
             except Exception as e:
-                print(f"Error updating profile image: {str(e)}")
                 messages.error(request, f"Errore: {str(e)}")
         else:
-            print(f"Form is invalid: {form.errors}")
             messages.error(request, "Form non valido")
 
         context = self.get_context_data()
         context['profForm'] = form
-        print("Rendering response with updated context")
         return self.render_to_response(context)
 
 class GenericDetailView(DetailView):
@@ -179,6 +162,24 @@ def profile_view(request, *args, **kwargs):
     else:
         return redirect('login')
 
+@login_required
+def change_password(request, pk):
+    if request.method == "POST":
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)  # mantiene l'utente loggato
+            messages.success(request, 'La tua password è stata cambiata con successo!')
+            return redirect('profile', pk=request.user.pk)
+        else:
+            # Se ci sono errori, aggiungi messaggi di errore
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = PasswordChangeForm(user=request.user)
+
+    return render(request, "user/password_change_form.html", {"form": form})
 
 @login_required
 @require_POST
@@ -201,19 +202,14 @@ def upload_loop(request):
             loop = form.save(commit=False)
             loop.user = request.user
             loop.save()
+            form.save_m2m()  # Salva le relazioni many-to-many (inclusi i tag)
 
-            tag_input = form.cleaned_data.get('tags', '')
-            tag_names = [t.strip().lower().replace(' ', '') for t in tag_input.split(',') if t.strip()]
-            tags = [Tag.objects.get_or_create(name=name)[0] for name in tag_names]
-            loop.tags.set(tags)
-
-            url = reverse('uploadable_detail', args=["loop",loop.id])
+            url = reverse('uploadable_detail', args=["loop", loop.id])
             messages.success(
                 request,
                 f'Prodotto "{loop.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
                 extra_tags='safe'
             )
-
             form = LoopForm()
     else:
         form = LoopForm()
@@ -227,20 +223,14 @@ def upload_samplepack(request):
             samplepack = form.save(commit=False)
             samplepack.user = request.user
             samplepack.save()
+            form.save_m2m()  # Salva le relazioni many-to-many (inclusi i tag)
 
-            tag_input = form.cleaned_data.get('tags_input', '')
-            tag_names = [t.strip().lower() for t in tag_input.split(',') if t.strip()]
-            for tag_name in tag_names:
-                tag, _ = Tag.objects.get_or_create(name=tag_name)
-                samplepack.tags.add(tag)
-
-            url = reverse('uploadable_detail', args=["samplepack",samplepack.id])
+            url = reverse('uploadable_detail', args=["samplepack", samplepack.id])
             messages.success(
                 request, 
                 f'Prodotto "{samplepack.title}" caricato con successo! <a href="{url}">Visualizza prodotto</a>',
                 extra_tags='safe'
             )
-
             form = SamplePackForm()
     else:
         form = SamplePackForm()
@@ -262,17 +252,15 @@ def edit_uploadable(request, pk, modeltype):
         return redirect('profile', pk=request.user.pk)
 
     if request.method == 'POST':
-        # Check if the button pressed is "back"
         if request.POST.get('action') == 'back':
             return redirect('profile', pk=request.user.pk)
         form = form_class(request.POST, request.FILES, instance=obj)
         if form.is_valid():
-            form = form.save(commit=False)
-            obj.save()
-            url = reverse('uploadable_detail', args=[modeltype.lower(), form.id])
+            updated_obj = form.save()  # ← Il form gestisce automaticamente i tag
+            url = reverse('uploadable_detail', args=[modeltype.lower(), updated_obj.id])
             messages.success(
                 request, 
-                f'Prodotto "{form.title}" modificato con successo! <a href="{url}">Visualizza prodotto</a>',
+                f'Prodotto "{updated_obj.title}" modificato con successo! <a href="{url}">Visualizza prodotto</a>',
                 extra_tags='safe'
             )
             return redirect('profile', pk=request.user.id)
@@ -377,3 +365,12 @@ def delete_comment(request, pk, modtype, upl_pk):
     else:
         messages.error(request, "Non puoi eliminare questo commento.")
     return redirect('uploadable_detail', modeltype=modtype, pk=upl_pk)
+
+def audio_file_proxy(request, loop_id):
+    loop = get_object_or_404(Loop, id=loop_id)
+    
+    # Incrementa il contatore
+    loop.increment_download_count()
+    
+    # Reindirizza al file originale
+    return redirect(loop.audio_file.url)

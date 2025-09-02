@@ -1,52 +1,29 @@
 {% extends "base.html"%}
-
-{% comment %} {% load crispy_forms_tags %} {% endcomment %}
 {% load widget_tweaks %}
 {% load static %}
-{% block title %}
-    Profile
-{% endblock %}
 
+{% block title %}Profile{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <div class="row align-items-center">
         <!-- Colonna per l'immagine del profilo -->
-        <div class="col-md-4 text-center">
+        <div class="col-lg-4 d-flex flex-column align-items-center mb-4 mb-lg-0">
             {% if profImg.image %}
-                <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class=" img-fluid img-thumbnail" style="max-width: 200px;">
+          <img src="{{ profImg.image.url }}" alt="Immagine del profilo" class="img-fluid rounded-circle shadow" style="width: 180px; height: 180px; object-fit: cover; border: 4px solid #f0f0f0;">
             {% else %}
-                <img src="{% static 'defaultProfileImage.jpg' %}" alt="Immagine del profilo" class="img-fluid img-thumbnail" style="max-width: 200px;">
+          <img src="{% static 'defaultProfileImage.jpg' %}" alt="Immagine del profilo" class="img-fluid rounded-circle shadow" style="width: 180px; height: 180px; object-fit: cover; border: 4px solid #f0f0f0;">
             {% endif %}
-        
+
             {% if user == request.user %}
-                {% if profForm.errors %}
-                  <div class="alert alert-danger mt-3">
-                    <ul>
-                      {% for field, errors in profForm.errors.items %}
-                        {% for error in errors %}
-                          <li><strong>{{ field }}:</strong> {{ error }}</li>
-                        {% endfor %}
-                      {% endfor %}
-                    </ul>
-                  </div>
-                {% endif %}
-              <div class="d-flex justify-content-center gap-2">
-                <label for="id_image" class="btn btn-outline-primary">
-                    Aggiorna immagine
-                </label>
-                {% if profImg.image != 'defaultProfileImage.jpg' %}
-                <form method="POST" action="{% url 'rm_profile_img' pk=user.id%}">
-                  {% csrf_token %}
-                  <button type="button" class="btn btn-outline-danger delete-btn">Rimuovi immagine</button>
-                </form>
-                {% endif %}
-              </div>
-              <form method="POST" enctype="multipart/form-data" action="{% url 'profile' pk=user.id %}" id="imageUploadForm">
-                {% csrf_token %}
-                <input type="file" id="id_image" name="image" class="d-none">
-                {{ profForm.image|add_class:"d-none" }}
-              </form> 
+          <div class="mt-4 w-100 d-flex flex-column gap-2">
+              <button class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+            Modifica Profilo
+              </button>
+              <a href="{% url 'change_password' pk=user.id %}" class="btn btn-outline-secondary w-100">
+            Cambia Password
+              </a>
+          </div>
             {% endif %}
         </div>
 
@@ -54,12 +31,120 @@
         <div class="col-md-8">
             <h1 class="fw-bold">{{ user.username }}</h1>
             <h4 class="text-muted">{{ user.first_name }} {{ user.last_name }}</h4>
+            
+            <!-- Bio -->
+            {% if profImg.bio %}
+                <div class="mt-3">
+                    <p class="text-muted">{{ profImg.bio }}</p>
+                </div>
+            {% endif %}
+            
+            <!-- Link social -->
+            <div class="mt-3">
+                {% if profImg.instagram %}
+                    <a href="https://instagram.com/{{ profImg.instagram }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                {% endif %}
+                {% if profImg.youtube %}
+                    <a href="{{ profImg.youtube }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fab fa-youtube"></i> YouTube
+                    </a>
+                {% endif %}
+                {% if profImg.soundcloud %}
+                    <a href="{{ profImg.soundcloud }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fab fa-soundcloud"></i> SoundCloud
+                    </a>
+                {% endif %}
+            </div>
+            
             <hr>
             <p><strong>Email:</strong> {{ user.email }}</p>
             <p><strong>Data di registrazione:</strong> {{ user.date_joined|date:"d M Y" }}</p>
             <p><strong>Ultimo accesso:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
         </div>
     </div>
+    
+    <!-- Modal per modificare il profilo -->
+    {% if user == request.user %}
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Modifica Profilo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" enctype="multipart/form-data" id="imageUploadForm">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="id_image" class="form-label">Immagine del profilo</label>
+                            {{ profForm.image|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_bio" class="form-label">Bio</label>
+                            {{ profForm.bio|add_class:"form-control" }}
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="id_instagram" class="form-label">Instagram</label>
+                                    {{ profForm.instagram|add_class:"form-control" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_youtube" class="form-label">YouTube</label>
+                            {{ profForm.youtube|add_class:"form-control" }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_soundcloud" class="form-label">SoundCloud</label>
+                            {{ profForm.soundcloud|add_class:"form-control" }}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                        <button type="submit" class="btn btn-primary">Salva modifiche</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal per modificare la password -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Cambia Password</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <form method="POST" action="{% url 'change_password' pk=user.id %}">
+            {% csrf_token %}
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="id_old_password" class="form-label">Vecchia Password</label>
+                <input type="password" name="old_password" class="form-control" id="id_old_password" required>
+              </div>
+              <div class="mb-3">
+                <label for="id_new_password1" class="form-label">Nuova Password</label>
+                <input type="password" name="new_password1" class="form-control" id="id_new_password1" required>
+              </div>
+              <div class="mb-3">
+                <label for="id_new_password2" class="form-label">Conferma Nuova Password</label>
+                <input type="password" name="new_password2" class="form-control" id="id_new_password2" required>
+              </div>
+              <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Cambia Password</button>
+              </div>
+              
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
     
     <hr class="my-4">
 
@@ -135,9 +220,18 @@
   
     confirmBtn.addEventListener("click", function () {
         console.log("Caricamento dell'immagine...");
-      form.submit();
+        form.submit();
     });
 
-  
+
+    {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                // Riapri il modal se ci sono errori
+                new bootstrap.Modal(document.getElementById('editProfileModal')).show();
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
   </script>
 {% endblock %}

@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import Loop, SamplePack, ProfileImage, Comment, Genre
+from .models import Loop, SamplePack, UserProfile, Comment, Genre
 
 admin.site.register(Loop)
 admin.site.register(SamplePack)
-admin.site.register(ProfileImage)
+admin.site.register(UserProfile)
 admin.site.register(Comment)
 admin.site.register(Genre)

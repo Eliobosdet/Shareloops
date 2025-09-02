@@ -71,32 +71,77 @@ class CustomLoginForm(AuthenticationForm):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Password'})
     )
 
-class UserUpdateForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'email']
 
-class ProfileImageUpdateForm(forms.ModelForm):
+class ProfileUpdateForm(forms.ModelForm):  # Rinominato da ProfileImageUpdateForm
     class Meta:
-        model = ProfileImage
-        fields = ['image']
-
+        model = UserProfile  # o ProfileImage se non hai rinominato
+        fields = ['image', 'bio', 'instagram', 'youtube', 'soundcloud']
+        widgets = {
+            'bio': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 4, 
+                'placeholder': 'Racconta qualcosa di te...'
+            }),
+            'instagram': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'username (senza @)'
+            }),
+            'youtube': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://youtube.com/channel/...'
+            }),
+            'soundcloud': forms.URLInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'https://soundcloud.com/username'
+            }),
+        }
 class LoopForm(forms.ModelForm):
-    tags = forms.CharField(required=False)
+    tags = forms.CharField(
+        required=False,
+        help_text="Inserisci i tag separati da virgole"
+    )
 
     class Meta:
         model = Loop
         fields = [
-                    'title', 'description', 'audio_file', 'tags', 'bpm', 'key',
-                    'time_signature_num', 'time_signature_den', 'genre', 'cover_image'
-                ]
+            'title', 'description', 'audio_file', 'bpm', 'key',
+            'time_signature_num', 'time_signature_den', 'genre', 'cover_image'
+        ]
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['tags'].initial = self.instance.get_tags_as_string()
+    
+    def save(self, commit=True):
+        instance = super().save(commit)
+        if commit:
+            tag_string = self.cleaned_data.get('tags', '')
+            instance.set_tags_from_string(tag_string)
+        return instance
+
 class SamplePackForm(forms.ModelForm):
-    tags = forms.CharField(required=False)
+    tags = forms.CharField(  # ← Cambia da 'tags_input' a 'tags' per coerenza
+        required=False,
+        help_text="Inserisci i tag separati da virgole"
+    )
     
     class Meta:
         model = SamplePack
-        fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio', 'tags']
-
+        fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['tags'].initial = self.instance.get_tags_as_string()
+    
+    def save(self, commit=True):
+        instance = super().save(commit)
+        if commit:
+            tag_string = self.cleaned_data.get('tags', '')
+            instance.set_tags_from_string(tag_string)
+        return instance
+    
 class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment

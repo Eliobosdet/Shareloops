@@ -46,6 +46,18 @@ class UploadableItem(models.Model):
     class Meta:
         abstract = True
     
+    def get_tags_as_string(self):
+        """Restituisce i tag come stringa separata da virgole"""
+        return ', '.join([tag.name for tag in self.tags.all()])
+    
+    def set_tags_from_string(self, tag_string):
+        """Imposta i tag da una stringa separata da virgole"""
+        if tag_string:
+            tag_names = [name.strip().lower() for name in tag_string.split(',') if name.strip()]
+            tags = [Tag.objects.get_or_create(name=name)[0] for name in tag_names]
+            self.tags.set(tags)
+        else:
+            self.tags.clear()
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -109,8 +121,20 @@ class Loop(UploadableItem):
     time_signature_num = models.PositiveIntegerField(blank=True, null=True, default=4)
     time_signature_den = models.PositiveIntegerField(blank=True, null=True, default=4)
 
+    # Campo per il conteggio dei download
+    download_count = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return f"{self.title} by {self.user.username}"
+
+    def increment_download_count(self):
+        """Incrementa il contatore dei download e restituisce il nuovo valore"""
+        self.download_count = models.F('download_count') + 1
+        self.save(update_fields=['download_count'])
+        
+        # Ricarica l'istanza per ottenere il valore aggiornato
+        self.refresh_from_db()
+        return self.download_count
 
 def validate_zip_extension(file):
     if not file.name.endswith('.zip'):
@@ -147,7 +171,7 @@ class SamplePack(UploadableItem):
 def profileimage_upload_path(instance, filename):
     return user_directory_path(instance, filename, 'profile_image')
 
-class ProfileImage(models.Model):
+class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(
         upload_to=profileimage_upload_path, 
@@ -155,6 +179,11 @@ class ProfileImage(models.Model):
         default='defaultProfileImage.jpg',
         max_length=255
     )
+    # Aggiungi i nuovi campi
+    bio = models.TextField(max_length=500, blank=True, null=True, help_text="Scrivi qualcosa su di te...")
+    instagram = models.CharField(max_length=100, blank=True, null=True, help_text="Username Instagram (senza @)")
+    youtube = models.URLField(blank=True, null=True, help_text="Link al tuo canale YouTube")
+    soundcloud = models.URLField(blank=True, null=True, help_text="Link al tuo profilo SoundCloud")
     
     def save(self, *args, **kwargs):
         # Sovrascrivi il salvataggio per rinominare il file
@@ -164,12 +193,15 @@ class ProfileImage(models.Model):
             # Imposta il nuovo nome
             self.image.name = f'img{ext}'  # Es: img.jpg, img.png
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
         
 @receiver(post_save, sender=User)
 def create_profile_image(sender, instance, created, **kwargs):
     if created:
         try:
-            ProfileImage.objects.create(user=instance)
+            UserProfile.objects.create(user=instance)
         except Exception as e:
             print(f"Errore nella creazione dell'immagine profilo: {e}")
         

@@ -11,9 +11,9 @@
       <h4>{{ sample.title }}</h2>
       <p>{{ sample.description }}</p>
         <p>Uploaded by: <a href="{% url 'profile' pk=sample.user.id%}">{{ sample.user.username }}</a></p>
-      <audio controls>
-          <source src="{{ sample.audio.url }}" type="audio/mpeg">
-      </audio>
+      <audio controls controlsList="nodownload">
+        <source src="{% url 'stream_sample' sample.id %}" type="audio/mpeg">
+    </audio>
     {% endfor %}
   </ul>
 </div>

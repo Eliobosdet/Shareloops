@@ -9,9 +9,10 @@
     <p>{{ loop.description }}</p>
     <p>Uploaded by: <a href="{% url 'profile' pk=loop.user.id %}">{{ loop.user.username }}</a></p>
     <audio controls>
-        <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
-        Your browser does not support the audio element.
+        <source src="{% url 'stream_sample' loop.id %}" type="audio/mpeg">
+        Il tuo browser non supporta l'elemento audio.
     </audio>
+
     <hr class="my-4">
     <h2 class="fw-bold">Commenti</h2>
     <ul class="list-group">

@@ -51,11 +51,8 @@
               </div>
 
               <div class="mb-3">
-                {% for tag in obj.tags.all %}
-                  <span>{{ tag.name }}</span>
-                {% endfor %}
-                <label for="id_tags" class="form-label">Tags</label>
-                <input name="tags" id="id_tags" value="" placeholder="Scrivi i tag..." class="form-control">
+                <label class="form-label">Tags</label>
+                {{ form.tags|add_class:"form-control" }}
               </div>
 
               <div class="mb-3">
