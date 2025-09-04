@@ -64,8 +64,8 @@
             
             <hr>
             <p><strong>Email:</strong> {{ user.email }}</p>
-            <p><strong>Data di registrazione:</strong> {{ user.date_joined|date:"d M Y" }}</p>
-            <p><strong>Ultimo accesso:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
+            <p><strong>Registration:</strong> {{ user.date_joined|date:"d M Y" }}</p>
+            <p><strong>Last login:</strong> {{ user.last_login|date:"d M Y H:i" }}</p>
         </div>
     </div>
     
@@ -152,10 +152,50 @@
     
     <hr class="my-4">
 
+    {% if user == request.user%}
+
+    <div class="row mb-4">
+      <div class="col-md-12">
+        <h2 class="fw-bold mb-3">Analytics</h2>
+        <div class="d-flex gap-4">
+          <div class="card shadow-sm text-center" style="min-width: 140px;">
+            <div class="card-body">
+              <i class="fas fa-heart fa-2x text-danger mb-2"></i>
+              <h5 class="card-title mb-1">{{ total_likes_received|default:0 }}</h5>
+              <p class="card-text text-muted small mb-0">Like received</p>
+            </div>
+          </div>
+          <div class="card shadow-sm text-center" style="min-width: 140px;">
+            <div class="card-body">
+              <i class="far fa-comment fa-2x text-primary mb-2"></i>
+              <h5 class="card-title mb-1">{{ total_comments_received|default:0 }}</h5>
+              <p class="card-text text-muted small mb-0">Commenti received</p>
+            </div>
+          </div>
+          <div class="card shadow-sm text-center" style="min-width: 140px;">
+            <div class="card-body">
+              <i class="fas fa-download fa-2x text-success mb-2"></i>
+              <h5 class="card-title mb-1">{{ total_downloads_received|default:0 }}</h5>
+              <p class="card-text text-muted small mb-0">Download received</p>
+            </div>
+          </div>
+          <div class="card shadow-sm text-center" style="min-width: 140px;">
+            <div class="card-body">
+              <i class="fas fa-play fa-2x text-info mb-2"></i>
+              <h5 class="card-title mb-1">{{ total_audioplays_received|default:0 }}</h5>
+              <p class="card-text text-muted small mb-0">Audio plays received</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
+
     <div class="row">
       <div class="col-md-12">
         {% if request.user.id == user.id %}
-          <h2 class="fw-bold">I tuoi caricamenti</h2>
+          <h2 class="fw-bold">Your Uploads</h2>
         {% else %}
           <h2 class="fw-bold">Caricamenti di {{ user.username }}</h2>
         {% endif %}
@@ -205,7 +245,9 @@
                   <!-- Main content: Cover image + Audio -->
                   <div class="d-flex mb-3">
                     <div class="me-3 flex-shrink-0">
-                      <img src="{{ load.obj.cover_image.url }}" alt="{{ load.obj.title }}" class="rounded" width="120" height="120" style="object-fit: cover;">
+                      <a href="{% url 'uploadable_detail' modeltype=load.modeltype pk=load.obj.id %}">
+                       <img src="{{ load.obj.cover_image.url }}" alt="{{ load.obj.title }}" class="rounded" width="120" height="120" style="object-fit: cover;">
+                      </a>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-center">
                       <!-- Audio player -->
@@ -225,7 +267,7 @@
                     <!-- Left: Actions -->
                     <div class="d-flex align-items-center gap-4">
                       <!-- Like button -->
-                      <button type="button" class="btn btn-sm btn-light d-flex align-items-center like-container p-1">
+                      <button type="button" class="btn btn-sm btn-light d-flex align-items-center like-container p-1" title="Like">
                         {% if request.user in load.obj.likes.all %}
                           <i class="fas fa-heart like-icon uploadable text-danger me-1" data-id="{{ load.obj.id }}" data-type="{{ load.modeltype }}" style="cursor: pointer;"></i>
                         {% else %}
@@ -235,14 +277,14 @@
                       </button>
 
                       <!-- Comment button -->
-                      <a href="{% url 'uploadable_detail' modeltype=load.modeltype pk=load.obj.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1">
+                      <a href="{% url 'uploadable_detail' modeltype=load.modeltype pk=load.obj.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Comment">
                         <i class="far fa-comment me-1"></i>
                         <span class="comment-count small">{{ load.obj.comments_count|default:0 }}</span>
                       </a>
 
                       <!-- Download button -->
-                      <a href="{% url 'audio_file_download' modeltype=load.modeltype pk=load.obj.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Scarica">
-                        <i class="fas fa-download text-success me-1"></i>
+                      <a href="{% url 'audio_file_download' modeltype=load.modeltype pk=load.obj.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Download">
+                        <i class="fas fa-download text-dark me-1"></i>
                         <span class="download-count small text-muted">{{ load.obj.download_count|default:0 }}</span>
                       </a>
                     </div>

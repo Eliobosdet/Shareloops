@@ -148,15 +148,6 @@ class Loop(UploadableItem):
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 
-    # def increment_download_count(self):
-    #     """Incrementa il contatore dei download e restituisce il nuovo valore"""
-    #     self.download_count = models.F('download_count') + 1
-    #     self.save(update_fields=['download_count'])
-        
-    #     # Ricarica l'istanza per ottenere il valore aggiornato
-    #     self.refresh_from_db()
-    #     return self.download_count
-
 def validate_zip_extension(file):
     if not file.name.endswith('.zip'):
         raise ValidationError("Il file deve avere estensione .zip.")
@@ -225,6 +216,58 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+    
+    def total_likes_received(self):
+        """Calcola il totale dei like ricevuti su tutti i contenuti dell'utente"""
+        total = 0
+        
+        # Like sui Loop
+        for loop in self.user.loop_set.all():
+            total += loop.likes.count()
+        # Like sui SamplePack
+        for samplepack in self.user.samplepack_set.all():
+            total += samplepack.likes.count()
+        
+        return total
+    
+    def total_comments_received(self):
+        """Calcola il totale dei commenti ricevuti"""
+        total = 0
+        
+        # Commenti sui Loop
+        for loop in self.user.loop_set.all():
+            total += loop.comments_count()
+        # Commenti sui SamplePack  
+        for samplepack in self.user.samplepack_set.all():
+            total += samplepack.comments_count()
+        
+        return total
+    
+    def total_downloads_received(self):
+        """Calcola il totale dei download ricevuti"""
+        total = 0
+
+        # Download dei Loop
+        for loop in self.user.loop_set.all():
+            total += loop.download_count
+        # Download dei SamplePack
+        for samplepack in self.user.samplepack_set.all():
+            total += samplepack.download_count
+        
+        return total
+
+    def total_audioplays_received(self):
+        """Calcola il totale delle riproduzioni ricevute"""
+        total = 0
+
+        # Riproduzioni dei Loop
+        for loop in self.user.loop_set.all():
+            total += loop.audioplay_count
+        # Riproduzioni dei SamplePack
+        for samplepack in self.user.samplepack_set.all():
+            total += samplepack.audioplay_count
+        
+        return total
         
 @receiver(post_save, sender=User)
 def create_profile_image(sender, instance, created, **kwargs):

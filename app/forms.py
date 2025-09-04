@@ -155,14 +155,16 @@ class CommentForm(forms.ModelForm):
         }
 
 class FilterForm(forms.Form):
-    tags = forms.ModelChoiceField(
+    tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control select2', 'style': 'width:100%;'}),
         required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        label="Tags",
+        help_text="Seleziona uno o più tag"
     )
 
     key = forms.ChoiceField(
-        choices=KEY_CHOICES,
+        choices=[('', '---------')] + KEY_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )

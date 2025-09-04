@@ -4,25 +4,68 @@
     Home Page
 {% endblock %}
 
+{% block head %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2();
+        });
+    </script>
+{% endblock %}
+
 {% block content %}
     {{ block.super }}
-    <div class="container ">
-    <h1 class="text-center mt-5">Welcome {{user.username}}</h1>
-    <hr>
-        <h2>Uploadable Items</h2>
+    <div class="container">
+        <h1 class="text-center mt-5 mb-4 fw-bold">Welcome {{ user.username }}</h1>
+        <form method="get" class="mb-4">
+            <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                {{ filterForm.tags.label_tag }}
+                {{ filterForm.tags }}
+            </div>
+            <div class="col-md-2">
+                {{ filterForm.key.label_tag }}
+                {{ filterForm.key }}
+            </div>
+            <div class="col-md-2">
+                {{ filterForm.bpm.label_tag }}
+                {{ filterForm.bpm }}
+            </div>
+            <div class="col-md-3">
+                {{ filterForm.genre.label_tag }}
+                {{ filterForm.genre }}
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+            </div>
+        </form>
+        <hr class="mb-5">
+        <h2 class="mb-4">Last updated</h2>
         <div class="row">
             {% for item in uploads %}
-                <div class="col-md-6 col-lg-4 mb-4">  <!-- massimo 3 card per riga su desktop -->
-                    <div class="card h-100">
-                        <img src="{{ item.obj.cover_image.url }}" class="card-img-top img-fluid" style="object-fit: cover; height: 250px;" alt="{{ item.obj.title }}">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ item.obj.title }}</h5>
-                            <p class="card-text">{{ item.obj.description }}</p>
-                            <p class="card-text"><small class="text-muted">Uploaded by {{ item.obj.user.username }}</small></p>
-                            <a href="{% url 'uploadable_detail' modeltype=item.modeltype pk=item.obj.id %}" class="btn btn-primary">View Details</a>
+                <div class="col-md-6 col-lg-4 mb-4 d-flex align-items-stretch">
+                    <div class="card shadow-sm h-100 border-0">
+                        <img src="{{ item.obj.cover_image.url }}" class="card-img-top img-fluid rounded-top" style="object-fit: cover; height: 250px;" alt="{{ item.obj.title }}">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title fw-semibold text-dark">{{ item.obj.title }}</h5>
+                            <p class="card-text text-muted mb-2">{{ item.obj.description|truncatewords:20 }}</p>
+                            <p class="card-text mt-auto"><small class="text-muted">Uploaded by <span class="fw-bold">{{ item.obj.user.username }}</span></small></p>
+                            <a href="{% url 'uploadable_detail' modeltype=item.modeltype pk=item.obj.id %}" class="btn btn-outline-primary mt-3">View Details</a>
                         </div>
                     </div>
                 </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info text-center">No uploads found.</div>
+                </div>
             {% endfor %}
         </div>
-        {% endblock %}
+    </div>
+{% endblock %}
+
+<!-- Carica jQuery e Select2 -->

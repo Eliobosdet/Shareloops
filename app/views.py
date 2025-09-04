@@ -23,12 +23,21 @@ class ProfileDetailView(DetailView):
     model = User
     template_name = 'user/profile.html'
     context_object_name = 'user'
+    login_url = '/login/'  # Specifica l'URL di login
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Ottieni o crea il profilo
-        profile, created = UserProfile.objects.get_or_create(user=self.object)
+
+        # logger.debug(f"ProfileDetailView - self.object: {self.object}")
+        # logger.debug(f"ProfileDetailView - URL kwargs: {self.kwargs}")
+        # logger.debug(f"ProfileDetailView - request.user: {self.request.user}")
+        
+        profile, _ = UserProfile.objects.get_or_create(user=self.object)
         context['profImg'] = profile
+        context['total_likes_received'] = profile.total_likes_received()
+        context['total_comments_received'] = profile.total_comments_received()
+        context['total_downloads_received'] = profile.total_downloads_received()
+        context['total_audioplays_received'] = profile.total_audioplays_received()
         # ✅ Popola il form con l'istanza esistente
         context['profForm'] = ProfileUpdateForm(instance=profile)
         context['loads'] = get_ordered_loads(self.object)
@@ -36,6 +45,10 @@ class ProfileDetailView(DetailView):
     
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+
+        if not request.user.is_authenticated:
+            messages.error(request, "Devi essere loggato per modificare il profilo")
+            return redirect('login')  # o redirect alla pagina di login
 
         if self.object != request.user:
             messages.error(request, "Non autorizzato")
@@ -124,7 +137,13 @@ class SamplePacksListView(ListView):
 def home(request, *args, **kwargs):
     tmp_name="home.html"
     uploads = get_ordered_loads()
-    return render(request,tmp_name, {'uploads': uploads})
+
+    context = {
+        'uploads': uploads,
+        'filterForm': FilterForm(request.GET)
+    }
+
+    return render(request,tmp_name, context)
 
 def register_view(request, *args, **kwargs):
     if request.method == 'POST':
@@ -157,12 +176,6 @@ def login_view(request, *args, **kwargs):
 def logout_view(request, *args, **kwargs):
     logout(request)
     return redirect('home')
-
-def profile_view(request, *args, **kwargs):
-    if request.user.is_authenticated:
-        return render(request, 'user/profile.html', {'user': request.user})
-    else:
-        return redirect('login')
 
 @login_required
 def change_password(request, pk):
