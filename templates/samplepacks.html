@@ -1,20 +1,133 @@
 {% extends "base.html" %}
 
+{% load static %}
+
+{% block head %}
+  <script src="{% static 'likes.js' %}"></script>
+{% endblock %}
+
 {% block title %}SamplePacks{% endblock %}
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5" id="samplepacks-container">
   <h1>SamplePacks</h1>
-  <ul>
-    {% for sample in samplepacks %}
-    <li class="mb-4 border p-3 shadow-sm bg-light">
-      <img src="{{ sample.cover_image.url }}" alt="(SamplePack Image)" width="100" height="100" />
-      <h4>{{ sample.title }}</h2>
-      <p>{{ sample.description }}</p>
-        <p>Uploaded by: <a href="{% url 'profile' pk=sample.user.id%}">{{ sample.user.username }}</a></p>
-      <audio controls controlsList="nodownload">
-        <source src="{% url 'stream_sample' sample.id %}" type="audio/mpeg">
-    </audio>
-    {% endfor %}
+  <ul class="list-unstyled">
+    {% for samplepack in samplepacks %}
+    <div class="row mt-3 border p-3 shadow-sm bg-light">
+      <li>
+        <img src="{{ samplepack.cover_image.url }}" alt="(SamplePack Image)" width="100" height="100" />
+        <h2>{{ samplepack.title }}</h2>
+          <audio controls>
+            <source src="{% url 'audio_file_download' modeltype='SamplePack' pk=samplepack.id %}" type="audio/mpeg">
+          </audio>
+          
+          <hr>
+        <p>{{ samplepack.description }}</p>
+        <hr>
+        <p class="text-end">
+            <small>
+            <img src="{{ samplepack.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
+            <a href="{% url 'profile' pk=samplepack.user.id %}"> {{ samplepack.user.username }}</a>
+            </small>
+        </p>      
+      </li>
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-3">
+            <!-- Like button -->
+            <div class="like-container me-2">
+            {% if request.user in samplepack.likes.all %}
+              <i class="fas fa-heart fa-lg like-icon uploadable text-danger" data-id="{{ samplepack.id }}" data-type="SamplePack"></i>
+            {% else %}
+              <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ samplepack.id }}" data-type="SamplePack"></i>
+            {% endif %}
+            <span class="like-count ms-1">{{ samplepack.likes.count|default:0 }}</span>
+            </div>
+
+            <!-- Comment count -->
+            <a href="{% url 'uploadable_detail' modeltype='SamplePack' pk=samplepack.id %}" style="color: inherit; text-decoration: none;" class="me-2">
+              <i class="far fa-comment fa-lg"></i>
+              <span class="comment-count ms-1">{{ samplepack.comments_count }}</span>
+            </a>
+
+            <!-- Download count -->
+            <div class="download-container">
+            <i class="fas fa-download"></i>
+            <span class="ms-1">{{ samplepack.download_count|default:0 }}</span>
+            </div>
+        </div>
+        <div>
+          {% for tag in samplepack.tags.all %}
+            <a href="#" class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
+          {% empty %}
+            <span class="text-muted">No tags</span>
+          {% endfor %}
+        </div>
+      </div>
+      </div>
+      {% empty %}
+      <li>
+        <p>Nessun samplepack disponibile.</p>
+      </li>
+      {% endfor %}
   </ul>
 </div>
+
+<script>
+  {% comment %} document.addEventListener("DOMContentLoaded", function () {
+    // Funzione per ottenere il token CSRF dai cookie
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+  
+    const csrftoken = getCookie('csrftoken');
+  
+    document.querySelectorAll(".like-icon").forEach(icon => {
+      icon.addEventListener("click", function () {
+        const samplepackId = this.getAttribute("data-id");
+        const modelType = this.getAttribute("data-type");
+        const likeCountSpan = this.nextElementSibling; // assume <span> is right after the icon
+  
+        const url = `/like/${samplepackId}/${modelType}/`;
+
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "Content-Type": "application/json"
+          }
+        })
+        .then(response => {
+          if (response.ok) return response.json();
+          else throw new Error("Errore nella richiesta AJAX");
+        })
+        .then(data => {
+          // Cambia stile dell'icona
+          if (data.liked) {
+            this.classList.remove("far");
+            this.classList.add("fas");
+          } else {
+            this.classList.remove("fas");
+            this.classList.add("far");
+          }
+          // Aggiorna conteggio like
+          likeCountSpan.textContent = data.likes_count;
+        })
+        .catch(error => {
+          console.error("Errore:", error);
+        });
+      });
+    });
+  }); {% endcomment %}
+</script>
+  
 {% endblock %}

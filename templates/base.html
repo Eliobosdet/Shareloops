@@ -54,12 +54,12 @@
             </ul>              
                 
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and user.id %}
                     <li class="nav-item">
                       <a class="nav-link" href="{% url 'upload' %}">Load</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'profile' pk=request.user.id%}">Profile</a>
+                        <a class="nav-link" href="{% url 'profile' pk=user.id%}">Profile</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'logout' %}">Logout</a>

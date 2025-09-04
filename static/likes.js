@@ -47,10 +47,14 @@ document.addEventListener("DOMContentLoaded", function () {
           // Cambia stile dell'icona
           if (data.liked) {
             this.classList.remove("far");
+            this.classList.remove("text-dark");
             this.classList.add("fas");
+            this.classList.add("text-danger");
           } else {
             this.classList.remove("fas");
+            this.classList.remove("text-danger");
             this.classList.add("far");
+            this.classList.add("text-dark");
           }
           // Aggiorna conteggio like
           likeCountSpan.textContent = data.likes_count;

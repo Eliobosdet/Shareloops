@@ -46,6 +46,22 @@ class UploadableItem(models.Model):
     class Meta:
         abstract = True
     
+    def get_download_count(self):
+        """Restituisce il numero di download per questo item"""
+        content_type = ContentType.objects.get_for_model(self)
+        return Download.objects.filter(
+            content_type=content_type,
+            object_id=self.id
+        ).count()
+    
+    def get_audioplay_count(self):
+        """Restituisce il numero di riproduzioni per questo item"""
+        content_type = ContentType.objects.get_for_model(self)
+        return AudioPlay.objects.filter(
+            content_type=content_type,
+            object_id=self.id
+        ).count()
+
     def get_tags_as_string(self):
         """Restituisce i tag come stringa separata da virgole"""
         return ', '.join([tag.name for tag in self.tags.all()])
@@ -121,20 +137,25 @@ class Loop(UploadableItem):
     time_signature_num = models.PositiveIntegerField(blank=True, null=True, default=4)
     time_signature_den = models.PositiveIntegerField(blank=True, null=True, default=4)
 
-    # Campo per il conteggio dei download
-    download_count = models.PositiveIntegerField(default=0)
+    @property
+    def download_count(self):
+        return self.get_download_count()
+
+    @property
+    def audioplay_count(self):
+        return self.get_audioplay_count()
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
 
-    def increment_download_count(self):
-        """Incrementa il contatore dei download e restituisce il nuovo valore"""
-        self.download_count = models.F('download_count') + 1
-        self.save(update_fields=['download_count'])
+    # def increment_download_count(self):
+    #     """Incrementa il contatore dei download e restituisce il nuovo valore"""
+    #     self.download_count = models.F('download_count') + 1
+    #     self.save(update_fields=['download_count'])
         
-        # Ricarica l'istanza per ottenere il valore aggiornato
-        self.refresh_from_db()
-        return self.download_count
+    #     # Ricarica l'istanza per ottenere il valore aggiornato
+    #     self.refresh_from_db()
+    #     return self.download_count
 
 def validate_zip_extension(file):
     if not file.name.endswith('.zip'):
@@ -164,6 +185,14 @@ class SamplePack(UploadableItem):
         validators=[validate_audio_extension, validate_fileMB_size_10],
         blank=True, null=True
     )
+
+    @property
+    def download_count(self):
+        return self.get_download_count()
+    
+    @property
+    def audioplay_count(self):
+        return self.get_audioplay_count()
 
     def __str__(self):
         return f"{self.title} by {self.user.username}"
@@ -253,5 +282,23 @@ class Repost(models.Model):
     class Meta:
         unique_together = ('user', 'content_type', 'object_id')
 
+class Download(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey('content_type', 'object_id')
+    downloaded_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        unique_together = ['user', 'content_type', 'object_id']
 
+class AudioPlay(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    item = GenericForeignKey('content_type', 'object_id')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    played_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'content_type', 'object_id']

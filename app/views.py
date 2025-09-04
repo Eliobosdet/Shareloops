@@ -1,4 +1,5 @@
-from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
+from django.http import HttpResponse, JsonResponse, FileResponse
 from django.apps import apps
 from django.urls import reverse
 from django.views.decorators.http import require_POST
@@ -106,6 +107,7 @@ class LoopsListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        
         if self.request.user.is_authenticated:
             context['liked_loops'] = self.request.user.likes_loop.all()
         else:
@@ -184,7 +186,7 @@ def change_password(request, pk):
 @login_required
 @require_POST
 def remove_profile_image(request, pk=None):
-    profile = request.user.profileimage
+    profile = request.user.userprofile
     profile.image.delete(save=False)  # elimina il file fisico
     profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
     profile.save()
@@ -366,11 +368,51 @@ def delete_comment(request, pk, modtype, upl_pk):
         messages.error(request, "Non puoi eliminare questo commento.")
     return redirect('uploadable_detail', modeltype=modtype, pk=upl_pk)
 
-def audio_file_proxy(request, loop_id):
-    loop = get_object_or_404(Loop, id=loop_id)
-    
-    # Incrementa il contatore
-    loop.increment_download_count()
-    
-    # Reindirizza al file originale
-    return redirect(loop.audio_file.url)
+@login_required
+def audio_file_download(request, modeltype, pk):
+    content_type = ContentType.objects.get(model=modeltype.lower())
+    item = get_object_or_404(content_type.model_class(), pk=pk)
+
+    # Registra il download se non è l'autore
+    if request.user != item.user:
+        _, created = Download.objects.get_or_create(
+            user=request.user,
+            content_type=content_type,
+            object_id=item.pk
+        )
+
+    # Serve il file direttamente (senza redirect)
+    file = item.audio_file.open('rb')
+    response = FileResponse(file, content_type="audio/mpeg")
+    response['Content-Disposition'] = f'attachment; filename="{item.audio_file.name}"'
+    return response
+
+def track_audio_play(request, modeltype, pk):
+    content_type = ContentType.objects.get(model=modeltype.lower())
+    item = get_object_or_404(content_type.model_class(), pk=pk)
+
+    # Ottieni l'IP dell'utente
+    ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
+    if ip_address:
+        ip_address = ip_address.split(',')[0].strip()
+    else:
+        ip_address = request.META.get('REMOTE_ADDR')
+
+    # Se l'utente è loggato, usa user, altrimenti usa solo l'IP
+    user = request.user if request.user.is_authenticated else None
+
+    # Cerca un AudioPlay per utente o IP
+    audioplay, created = AudioPlay.objects.get_or_create(
+        user=user,
+        ip_address=ip_address,
+        content_type=content_type,
+        object_id=item.pk,
+        defaults={'played_at': timezone.now()}
+    )
+
+    # Aggiorna played_at solo se non è stato creato oggi
+    if not created and audioplay.played_at.date() < timezone.now().date():
+        audioplay.played_at = timezone.now()
+        audioplay.save(update_fields=['played_at'])
+
+    return redirect(item.audio_file.url)
