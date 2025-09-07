@@ -13,6 +13,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import *
 from .utils import get_ordered_loads
 import logging
+from urllib.parse import unquote_plus
 # from django.contrib.auth.forms import AuthenticationForm
 
 logger = logging.getLogger(__name__)
@@ -135,15 +136,59 @@ class SamplePacksListView(ListView):
 ### FBV ###
 
 def home(request, *args, **kwargs):
-    tmp_name="home.html"
+    tmp_name = "home.html"
     uploads = get_ordered_loads()
+
+    cleaned_data = {
+            'title': request.GET.get('title', ''),
+            'tags': request.GET.getlist('tags'),
+            'key': request.GET.get('key'),
+            'bpm_min': request.GET.get('bpm_min'),
+            'bpm_max': request.GET.get('bpm_max'),
+            'genre': request.GET.get('genre'),
+        }
+
+    title = cleaned_data.get('title')
+    if title:
+        title_decoded = unquote_plus(title)
+        uploads = [upload for upload in uploads if title_decoded.lower() in str(upload['obj'].title).lower()]
+
+    selected_tags = cleaned_data.get('tags')
+    if selected_tags:
+        selected_tags = [str(tag) for tag in selected_tags]
+        uploads = [
+            upload for upload in uploads
+            if any(str(tag.id) in selected_tags for tag in upload['obj'].tags.all())
+        ]
+
+    key = cleaned_data.get('key')
+    if key and key != '':
+        key_decoded = unquote_plus(key)
+        uploads = [upload for upload in uploads if str(upload['obj'].key) == str(key_decoded)]
+
+    bpm_min = cleaned_data.get('bpm_min')
+    bpm_max = cleaned_data.get('bpm_max')
+    try:
+        if bpm_min is not None and bpm_min != '':
+            bpm_min = int(bpm_min)
+            uploads = [upload for upload in uploads if int(getattr(upload['obj'], 'bpm', 0)) >= bpm_min]
+        if bpm_max is not None and bpm_max != '':
+            bpm_max = int(bpm_max)
+            uploads = [upload for upload in uploads if int(getattr(upload['obj'], 'bpm', 0)) <= bpm_max]
+    except ValueError:
+        pass
+
+    genre = cleaned_data.get('genre')
+    if genre and genre != '':
+        uploads = [upload for upload in uploads if str(getattr(upload['obj'], 'genre', '')) == str(genre)]
 
     context = {
         'uploads': uploads,
-        'filterForm': FilterForm(request.GET)
+        'filterForm': FilterForm(request.GET),
+        'searchForm': SearchForm(request.GET)
     }
 
-    return render(request,tmp_name, context)
+    return render(request, tmp_name, context)
 
 def register_view(request, *args, **kwargs):
     if request.method == 'POST':

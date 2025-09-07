@@ -154,29 +154,36 @@ class CommentForm(forms.ModelForm):
             }),
         }
 
+class SearchForm(forms.Form):
+    title = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Search for artists, bands, loops and samplepacks'}),
+    )
+
 class FilterForm(forms.Form):
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),
         widget=forms.SelectMultiple(attrs={'class': 'form-control select2', 'style': 'width:100%;'}),
         required=False,
         label="Tags",
-        help_text="Seleziona uno o più tag"
+        help_text="Select one or more"
     )
-
     key = forms.ChoiceField(
         choices=[('', '---------')] + KEY_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-
-    bpm = forms.IntegerField(
+    bpm_min = forms.IntegerField(
         required=False,
-        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'BPM'})
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'BPM Min'})
     )
-
+    bpm_max = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'BPM Max'})
+    )
     genre = forms.ModelChoiceField(
         queryset=Genre.objects.all(),
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
-        

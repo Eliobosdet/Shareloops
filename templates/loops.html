@@ -91,7 +91,7 @@
       <!-- Right: Tags -->
       <div class="d-flex align-items-center flex-wrap">
         {% for tag in loop.tags.all %}
-          <a href="#" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.75rem;">#{{ tag.name }}</a>
+          <a href="{% url 'home' %}?tags={{tag.id}}" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.75rem;">#{{ tag.name }}</a>
         {% empty %}
           <span class="text-muted small">Nessun tag</span>
         {% endfor %}
