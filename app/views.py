@@ -146,7 +146,8 @@ def home(request, *args, **kwargs):
             'bpm_min': request.GET.get('bpm_min'),
             'bpm_max': request.GET.get('bpm_max'),
             'genre': request.GET.get('genre'),
-        }
+            'upload_type': request.GET.get('upload_type', '')
+    }
 
     title = cleaned_data.get('title')
     if title:
@@ -182,10 +183,13 @@ def home(request, *args, **kwargs):
     if genre and genre != '':
         uploads = [upload for upload in uploads if str(getattr(upload['obj'], 'genre', '')) == str(genre)]
 
+    upload_type = cleaned_data.get('upload_type')
+    if upload_type and upload_type != '':
+        uploads = [upload for upload in uploads if upload['type'].lower() == upload_type.lower()]
+
     context = {
         'uploads': uploads,
-        'filterForm': FilterForm(request.GET),
-        'searchForm': SearchForm(request.GET)
+        'is_filtered': any(param in request.GET for param in cleaned_data.keys())
     }
 
     return render(request, tmp_name, context)

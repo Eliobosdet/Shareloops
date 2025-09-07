@@ -170,7 +170,7 @@ class FilterForm(forms.Form):
         help_text="Select one or more"
     )
     key = forms.ChoiceField(
-        choices=[('', '---------')] + KEY_CHOICES,
+        choices=[('', 'All')] + KEY_CHOICES,
         required=False,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
@@ -185,5 +185,11 @@ class FilterForm(forms.Form):
     genre = forms.ModelChoiceField(
         queryset=Genre.objects.all(),
         required=False,
+        empty_label="All",
         widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    upload_type = forms.ChoiceField(
+        choices=[('', 'All'), ('loop', 'Loop'), ('samplepack', 'Sample Pack')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
     )

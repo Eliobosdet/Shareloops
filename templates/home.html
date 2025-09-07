@@ -13,9 +13,13 @@
 {% block content %}
     {{ block.super }}
     <div class="container">
-        <h1 class="text-center mt-5 mb-4 fw-bold">Welcome {{ user.username }}</h1>
-        <hr class="mb-5">
-        <h2 class="mb-4">Last updated</h2>
+        {% if is_filtered %}
+            <h1 class="text-center mt-5 mb-4 fw-bold">Results found</h1>
+        {% else %}
+            <h1 class="text-center mt-5 mb-4 fw-bold">Welcome back {{ user.username }}</h1>
+            <hr class="mb-5">
+            <h2 class="mb-4">Last updated</h2>
+        {% endif %}
         <div class="row">
             {% for item in uploads %}
                 <div class="col-md-6 col-lg-4 mb-4 d-flex align-items-stretch">

@@ -1,141 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    {% load static %}
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{% static 'likes.js' %}"></script>
-    <script src="https://kit.fontawesome.com/9e203f247f.js" crossorigin="anonymous"></script>
-    <title>{% block title %} {% endblock %}</title>
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2();
-        });
-    </script>
+  {% load static %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'likes.js' %}"></script>
+  <script src="https://kit.fontawesome.com/9e203f247f.js" crossorigin="anonymous"></script>
+  <title>{% block title %}{% endblock %}</title>
+
+  <style>
+    /* Contenitore relativo per bottone + pannello */
+    .filter-container {
+      position: relative;
+      display: inline-block;
+    }
+    /* Pannello filtri: assoluto rispetto al bottone */
+    #filterOptions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 300px;      /* più verticale e compatto */
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 0.5rem; /* piccolo spazio sotto il bottone */
+      z-index: 1050;
+    }
+  </style>
+  
+  <script>
+$(document).ready(function() {
+  initializeSelect2();
+  $('#filterOptions').on('shown.bs.collapse', initializeSelect2);
+
+  function initializeSelect2() {
+    $('.select2').each(function() {
+      const $el = $(this);
+      if ($el.hasClass('select2-hidden-accessible')) {
+        $el.select2('destroy');
+      }
+      $el.select2({
+        width: '100%',
+        tags: true,
+        tokenSeparators: [',', ' '],
+        placeholder: $el.attr('placeholder') || 'Select options...',
+        allowClear: true
+      });
+    });
+  }
+
+  // ✅ FUNZIONE PER AZZERARE TUTTI I FILTRI
+  function clearAllFilters() {
+    // Azzera tutti i campi input
+    $('#filterOptions input[type="text"], #filterOptions input[type="number"]').val('');
+    
+    // Azzera tutti i select normali (imposta al primo valore)
+    $('#filterOptions select:not(.select2)').each(function() {
+      $(this).prop('selectedIndex', 0);
+    });
+    
+    // Azzera tutti i Select2
+    $('#filterOptions .select2').each(function() {
+      $(this).val(null).trigger('change');
+    });
+    
+    // Reinizializza Select2 dopo il reset
+    initializeSelect2();
+    
+    console.log('Tutti i filtri sono stati azzerati');
+  }
+
+  // ✅ EVENTO CLICK per il pulsante Reset
+  $(document).on('click', '#clearFiltersBtn', function(e) {
+    e.preventDefault();
+    clearAllFilters();
+  });
+
+  // ✅ FUNZIONE GLOBALE (opzionale - accessibile da ovunque)
+  window.clearAllFilters = clearAllFilters;
+});
+</script>
 </head>
 <body>
+  {% block header %}
+  <header class="bg-light text-center py-3">
+    <h1>FreeSound Market</h1>
+    <p>Your one-stop shop for free sound loops and kits.</p>
+  </header>
+  {% endblock %}
   
-{% block header %}
-<header class="bg-light text-center py-3">
-  <h1>FreeSound Market</h1>
-  <p>Your one-stop shop for free sound loops and kits.</p>
-</header>
-{% endblock %}
-
-{% block navbar %}
-<div class="container">
-  <nav class="navbar navbar-expand-lg bg-body-tertiary">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="{% url 'home' %}">FreeSound Market</a>
-
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-              aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <!-- Links -->
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <li class="nav-item"><a class="nav-link" href="{% url 'loops_list' %}">Loops</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'samplepacks_list' %}">Packs</a></li>
-        </ul> 
-
-        <form class="d-flex w-80" role="search" method="get" action="{% url 'home' %}">
-        <div class="row">
+  {% block navbar %}
+  <div class="container">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'home' %}">FreeSound Market</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+          aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link" href="{% url 'loops_list' %}">Loops</a></li>
+            <li class="nav-item"><a class="nav-link" href="{% url 'samplepacks_list' %}">Packs</a></li>
+          </ul>
+          
+          <form class="d-flex align-items-start filter-container" method="get" action="{% url 'home' %}">
+            <!-- Search input -->
             {{ searchForm.title }}
             <button class="btn btn-outline-success ms-2" type="submit">Search</button>
-        </div>
-
-        <button class="btn btn-outline-primary ms-3" type="button" data-bs-toggle="collapse" data-bs-target="#filterOptions" aria-expanded="false" aria-controls="filterOptions">
-          <i class="fas fa-filter"></i>
-        </button>
-        <div class="collapse mt-2" id="filterOptions">
-          <!-- Filter Modal Trigger Button (already present) -->
-          <!-- Modal -->
-          <div class="modal fade" id="filterModal" tabindex="-1" aria-labelledby="filterModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="filterModalLabel">Filter Options</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            
+            <!-- Bottone filtro -->
+            <button class="btn btn-outline-primary ms-3" type="button"
+              data-bs-toggle="collapse" data-bs-target="#filterOptions"
+              aria-expanded="false" aria-controls="filterOptions">
+              <i class="fas fa-filter"></i>
+            </button>
+            
+            <!-- Pannello filtri -->
+            <div class="collapse shadow bg-white rounded" id="filterOptions">
+              <div class="card card-body p-3">
+                <h5 class="card-title mb-3"><i class="fas fa-filter me-2"></i>Filter Options</h5>
+                <div class="mb-3">
+                  {{ filterForm.tags.label_tag }} {{ filterForm.tags }}
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                      {{ filterForm.tags.label_tag }}
-                      {{ filterForm.tags }}
-                    </div>
-                    <div class="mb-3">
-                      {{ filterForm.key.label_tag }}
-                      {{ filterForm.key }}
-                    </div>
-                    <div class="mb-3">
-                      {{ filterForm.bpm_min.label_tag }}
-                      {{ filterForm.bpm_min }}
-                    </div>
-                    <div class="mb-3">
-                      {{ filterForm.bpm_max.label_tag }}
-                      {{ filterForm.bpm_max }}
-                    </div>
-                    <div class="mb-3">
-                      {{ filterForm.genre.label_tag }}
-                      {{ filterForm.genre }}
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary" data-bs-dismiss="modal">Apply Filters</button>
-                        <a href="{% url 'home' %}" class="btn btn-outline-secondary">Reset Filters</a>
-                    </div>
-                  </div>
+                <div class="mb-3">
+                  {{ filterForm.key.label_tag }} {{ filterForm.key }}
+                </div>
+                <div class="mb-3">
+                  {{ filterForm.genre.label_tag }} {{ filterForm.genre }}
+                </div>
+                <div class="mb-3">
+                  {{ filterForm.bpm_min.label_tag }} {{ filterForm.bpm_min }}
+                </div>
+                <div class="mb-3">
+                  {{ filterForm.bpm_max.label_tag }} {{ filterForm.bpm_max }}
+                </div>
+                <div class="mb-3">
+                  {{ filterForm.upload_type.label_tag }} {{ filterForm.upload_type }}
+                </div>
+                <div class="d-grid gap-2">
+                  <button type="button" id="clearFiltersBtn" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Reset Filters
+                  </button>
                 </div>
               </div>
             </div>
-            <script>
-              // Optionally, you can trigger the modal from the filter button
-              document.querySelector('[data-bs-target="#filterOptions"]').addEventListener('click', function(e) {
-                var filterModal = new bootstrap.Modal(document.getElementById('filterModal'));
-                filterModal.show();
-                e.preventDefault();
-              });
-            </script>
-          </div>
-        </form>
-
-        <!-- USER MENU -->
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          {% if request.user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'upload' %}">Load</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'profile' pk=user.id %}">Profile</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
-          {% else %}
-          <li class="nav-item mx-auto"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
-          <li class="nav-item mx-auto"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
-          {% endif %}
-        </ul>
+          </form>
+          
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            {% if request.user.is_authenticated %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'upload' %}">Load</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'profile' pk=user.id %}">Profile</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
+            {% else %}
+              <li class="nav-item mx-auto"><a class="nav-link" href="{% url 'login' %}">Login</a></li>
+              <li class="nav-item mx-auto"><a class="nav-link" href="{% url 'register' %}">Register</a></li>
+            {% endif %}
+          </ul>
+        </div>
       </div>
-    </div>
-  </nav>
-</div>
-{% endblock %}
-
-{% if messages %}
-<div class="container mt-3">
-  {% for message in messages %}
-  <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-    {{ message|safe }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </nav>
   </div>
-  {% endfor %}
-</div>
-{% endif %}
-
-
-{% block content %}{% endblock %}
+  {% endblock %}
+  
+  {% if messages %}
+  <div class="container mt-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message|safe }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  
+  {% block content %}{% endblock %}
 </body>
 </html>
