@@ -303,6 +303,7 @@ def upload_samplepack(request):
 @login_required
 def edit_uploadable(request, pk, modeltype):
     template = 'user/edit_uploadable.html'
+
     if modeltype == 'Loop':
         obj = get_object_or_404(Loop, pk=pk, user=request.user)
         form_class = LoopForm
@@ -318,19 +319,46 @@ def edit_uploadable(request, pk, modeltype):
     if request.method == 'POST':
         if request.POST.get('action') == 'back':
             return redirect('profile', pk=request.user.pk)
-        form = form_class(request.POST, request.FILES, instance=obj)
+
+        print(f"tags: {request.POST.getlist('tags')}")
+        tags = request.POST.getlist('tags')
+
+        new_tags = []
+
+        for tag in tags:
+            if tag.isdigit():
+                tag_id = int(tag)
+                if Tag.objects.filter(id=tag_id).exists():
+                    new_tags.append(tag_id)
+            else:
+                tag_name = tag.strip()
+                if tag_name:
+                    new_tag, created = Tag.objects.get_or_create(name=tag_name)
+                    new_tags.append(new_tag.id)
+        post_data = request.POST.copy()
+        post_data.setlist('tags', [str(pk) for pk in new_tags])
+        print(f"🔍 ALL POST data: {dict(post_data)}")
+
+        form = form_class(post_data, request.FILES, instance=obj)
         if form.is_valid():
-            updated_obj = form.save()  # ← Il form gestisce automaticamente i tag
-            url = reverse('uploadable_detail', args=[modeltype.lower(), updated_obj.id])
-            messages.success(
-                request, 
-                f'Prodotto "{updated_obj.title}" modificato con successo! <a href="{url}">Visualizza prodotto</a>',
-                extra_tags='safe'
-            )
-            return redirect('profile', pk=request.user.id)
+            upd_obj = form.save(commit=False)
+            upd_obj.save()
+
+            tags_from_form = form.cleaned_data.get('tags')
+            if tags_from_form is not None:
+                upd_obj.tags.set(tags_from_form)
+            else:
+                upd_obj.tags.set(new_tags)
+
+            url = reverse('uploadable_detail', args=[modeltype.lower(), upd_obj.id])
+            messages.success(request, f"{modeltype} aggiornato con successo! <a href='{url}'>Visualizza {modeltype}</a>", extra_tags='safe')
+            return redirect('profile', pk=request.user.pk)
+        
     else:
         form = form_class(instance=obj)
+
     return render(request, template, {'form': form, context_name: obj})
+
 
 @login_required
 @require_POST
@@ -453,6 +481,8 @@ def track_audio_play(request, modeltype, pk):
     content_type = ContentType.objects.get(model=modeltype.lower())
     item = get_object_or_404(content_type.model_class(), pk=pk)
 
+    print(f"Tracking play for {modeltype} with ID {pk}")
+
     # Ottieni l'IP dell'utente
     ip_address = request.META.get('HTTP_X_FORWARDED_FOR')
     if ip_address:
@@ -466,11 +496,12 @@ def track_audio_play(request, modeltype, pk):
     # Cerca un AudioPlay per utente o IP
     audioplay, created = AudioPlay.objects.get_or_create(
         user=user,
-        ip_address=ip_address,
         content_type=content_type,
         object_id=item.pk,
-        defaults={'played_at': timezone.now()}
+        defaults={'played_at': timezone.now(), 'ip_address': ip_address}
     )
+
+    print(f"AudioPlay created: {created}, played_at: {audioplay.played_at}, ip_address: {audioplay.ip_address}")
 
     # Aggiorna played_at solo se non è stato creato oggi
     if not created and audioplay.played_at.date() < timezone.now().date():

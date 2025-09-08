@@ -251,9 +251,11 @@
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-center">
                       <!-- Audio player -->
-                      <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;">
-                        <source src="{% url 'track_audio_play' modeltype=load.modeltype pk=load.obj.id %}" type="audio/mpeg">
+                      <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;" 
+                            onplay="registerPlay('{{ load.modeltype }}', '{{ load.obj.id }}')">
+                        <source src="{{ load.obj.audio_file.url }}" type="audio/mpeg">
                       </audio>
+
                       
                       <!-- Description -->
                       {% if load.obj.description %}
@@ -292,9 +294,9 @@
                     <!-- Right: Tags -->
                     <div class="d-flex align-items-center flex-wrap">
                       {% for tag in load.obj.tags.all %}
-                        <a href="#" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.75rem;">#{{ tag.name }}</a>
+                      <a href="{% url 'home' %}?tags={{ tag.id }}" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.75rem;">#{{ tag.name }}</a>
                       {% empty %}
-                        <span class="text-muted small">Nessun tag</span>
+                      <span class="text-muted small">Nessun tag</span>
                       {% endfor %}
                     </div>
                   </div>
@@ -336,6 +338,37 @@
         form.submit();
     });
 
+
+    function registerPlay(modeltype, pk) {
+  fetch(`${modeltype}/${pk}/track_play`, {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": getCookie("csrftoken"), // Django CSRF
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({})
+  }).then(response => {
+    if (!response.ok) {
+      console.error("Errore nel tracking dell'ascolto");
+    }
+  });
+}
+
+// Helper per leggere il CSRF cookie
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
 
     {% if messages %}
         {% for message in messages %}

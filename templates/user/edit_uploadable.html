@@ -117,40 +117,7 @@
   </div>
 
   <!-- Tagify JS + CSS -->
-  <script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
   <script>
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('form');
-        const saveBtn = form.querySelector('button[type="submit"][value="save"]');
-        form.addEventListener('input', function() {
-            saveBtn.disabled = false;
-    });
-    });
-    
-      const input = document.querySelector('input[name=tags]');
-      const tagify = new Tagify(input, {
-          whitelist: [],
-          dropdown: {
-              enabled: 1,
-              classname: 'tags-look',
-              maxItems: 10,
-              position: 'text',
-              closeOnSelect: false,
-          }
-      });
-
-      // Autocomplete AJAX
-      tagify.on('input', function(e){
-          let value = e.detail.value;
-          fetch(`/api/tags/?q=${value}`)
-              .then(res => res.json())
-              .then(data => {
-                  tagify.settings.whitelist = data.map(obj => obj.value);
-                  tagify.dropdown.show.call(tagify, value); // show the suggestions
-              });
-      });
-
       document.addEventListener('DOMContentLoaded', function() {
                   const bpmInput = document.getElementById('{{ form.bpm.id_for_label }}');
                   if (bpmInput) {
@@ -163,7 +130,5 @@
                   });
                   }
                 });
-
-    
   </script>
 {% endblock %}

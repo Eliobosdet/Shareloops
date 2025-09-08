@@ -6,132 +6,292 @@
 {% block head %}
   <script src="{% static 'likes.js' %}"></script>
 {% endblock %}
+
 {% block content %}
-
 <div class="container mt-5" id="uploadableitem-detail-container">
-  <h1>{{ item.title }}</h1>
-  <img src="{{ item.cover_image.url }}" alt="(Cover Image)" width="100" height="100" />
-  <audio controls>
-    <source src="{{ item.audio_file.url }}" type="audio/mpeg">
-  </audio>
-  <p>{{ item.description }}</p>
-  {% if item.bpm %}
-    <p>BPM: {{ item.bpm }}</p>
-  {% endif %}
-  <p>
-    {% for tag in item.tags.all %}
-    <span class="badge bg-secondary">{{ tag.name }}</span>
-    {% empty %}
-        <span class="text-muted">No tags</span>
-    {% endfor %}
-</p>
-  <p>Uploaded at: {{ item.uploaded_at|date:"d M Y H:i" }}</p>
-  <p>Uploaded by: <a href="{% url 'profile' pk=item.user.id %}">{{ item.user.username }}</a></p>
-
-  <div class="d-inline-block me-2 gap-2">
-    {% if request.user in item.likes.all %}
-      <i class="fas fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
-    {% else %}
-      <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ item.id }}" data-type="{{ modeltype }}"></i>
-    {% endif %}
-    <span class="like-count">{{ item.likes_count }}</span>
-    <form method="post" action="{% url 'add_comment' pk=item.id modeltype=modeltype %}">
-      {% csrf_token %}
-      {{ commentForm.body }}
-      <button type="submit" class="btn btn-primary btn-sm mt-2">Add Comment</button>
-    </form>
-  </div>
-
-  <h3>Comments</h3>
-
-{% for comment in comments %}
-    <div class="row mt-3 border p-3 shadow-sm bg-light comment-container">
-      <div class="d-inline align-middle p-2 mb-2">
-        <a href="{% url 'profile' pk=comment.user.id %}" class="text-decoration-none text-dark">
-        <img src="{{ comment.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
-        <h5 class="d-inline ms-2 align-middle">{{ comment.user.username }}</h5>
-        </a>
+  
+  <!-- ✅ SEZIONE PRINCIPALE - Stile loops.html -->
+  <div class="row mt-4 p-4 shadow-sm bg-white rounded">
+    <div class="col-12">
+      
+      <!-- Header: User info e titolo -->
+      <div class="d-flex align-items-center mb-3 justify-content-between">
+        <div class="d-flex align-items-center">
+          <a href="{% url 'profile' pk=item.user.id %}">
+            <img src="{{ item.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle me-3" width="50" height="50">
+          </a>
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center">
+              <a href="{% url 'profile' pk=item.user.id %}" class="text-decoration-none text-dark fw-bold me-2">{{ item.user.username }}</a>
+              <span class="text-muted small">•</span>
+              <span class="text-muted small ms-2">{{ item.uploaded_at|timesince }} ago</span>
+            </div>
+            <h2 class="mb-0 mt-1">{{ item.title }}</h2>
+          </div>
+        </div>
+        
+        <!-- Stats in header -->
+        <div class="d-flex align-items-center gap-4">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-play text-muted me-1"></i>
+            <span class="small text-muted">{{ item.audioplay_count|default:0 }}</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <i class="fas fa-download text-muted me-1"></i>
+            <span class="small text-muted">{{ item.download_count|default:0 }}</span>
+          </div>
+        </div>
       </div>
-      <hr>
-        <p>
-          {{ comment.body }}
-        </p>
-        <br>
-        <div class="row">
-          <div class="col-1">
-          <p class="text-start">
-            <small>
-              {% if comment in liked_comments %}
-                <i class="fas fa-heart fa-lg like-icon comment" data-id="{{ comment.id }}" data-type="comment"></i>
-              {% else %}
-                <i class="far fa-heart fa-lg like-icon comment" data-id="{{ comment.id }}" data-type="comment"></i>
-              {% endif %}
-              <span class="like-count">{{ comment.likes_count }}</span>
-              <i class="far fa-comment fa-lg ms-1 comment_reply"></i>
-              <span class="reply-count">{{ comment.replies_count }}</span>
-            </small>
-          </p>
-          </div>
-          <div class="col-6">
-              <form method="post" action="{% url 'add_comment_with_parent' pk=item.id modeltype=modeltype parent_id=comment.id %}" class="d-none reply-form">
-                {% csrf_token %}
-                {{ commentForm.body }}
-                <button type="submit" class="btn btn-primary btn-sm ms-2">Reply</button>
-              </form>
-          </div>
-          <div class="col-4">
-            <p class="text-end">
-              <small class="text-muted">
-                {{ comment.created_at|date:"M d, Y H:i" }}
-              </small>
-            </p>
-          </div>
-          <div class="col-1 text-end">
-          {% if comment.user == request.user %}
-                <form method="POST" action="{% url 'delete_comment' pk=comment.id modtype=modeltype upl_pk=item.id %}">
-                  {% csrf_token %}
-                  <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Delete</button>
-                </form>              
-              {% endif %}
-          </div>
+
+      <!-- Main content: Cover image + Audio + Details -->
+      <div class="d-flex mb-4">
+        <div class="me-4 flex-shrink-0">
+          <img src="{{ item.cover_image.url }}" alt="{{ item.title }}" class="rounded shadow" width="200" height="200" style="object-fit: cover;">
+        </div>
+        
+        <div class="flex-grow-1 d-flex flex-column justify-content-center">
+          <!-- Audio player -->
+          <audio controls controlsList="nodownload" class="w-100 mb-3 audio-player" 
+                 style="height: 50px;" 
+                 data-modeltype="{{ modeltype }}" 
+                 data-pk="{{ item.id }}">
+            <source src="{{ item.audio_file.url }}" type="audio/mpeg">
+          </audio>
           
-        <br>
+          <!-- Description -->
+          {% if item.description %}
+          <div class="mb-3">
+            <h5 class="text-muted">Description</h5>
+            <p class="text-dark">{{ item.description }}</p>
+          </div>
+          {% endif %}
+          
+          <!-- Technical Details -->
+          <div class="row mb-3">
+            {% if item.bpm %}
+            <div class="col-md-3">
+              <small class="text-muted">BPM</small>
+              <div class="fw-bold">{{ item.bpm }}</div>
+            </div>
+            {% endif %}
+            
+            {% if item.key %}
+            <div class="col-md-3">
+              <small class="text-muted">Key</small>
+              <div class="fw-bold">{{ item.key }}</div>
+            </div>
+            {% endif %}
+            
+            {% if item.genre %}
+            <div class="col-md-3">
+              <small class="text-muted">Genre</small>
+              <div class="fw-bold">{{ item.genre }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="col-md-3">
+              <small class="text-muted">Uploaded</small>
+              <div class="fw-bold">{{ item.uploaded_at|date:"M d, Y" }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions e Tags -->
+      <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-4">
+        <!-- Left: Actions -->
+        <div class="d-flex align-items-center gap-4">
+          <!-- Like button -->
+          <button type="button" class="btn btn-sm btn-light d-flex align-items-center like-container p-2" title="Like">
+            {% if request.user in item.likes.all %}
+              <i class="fas fa-heart like-icon uploadable text-danger me-2" data-id="{{ item.id }}" data-type="{{ modeltype }}" style="cursor: pointer;"></i>
+            {% else %}
+              <i class="far fa-heart like-icon uploadable text-dark me-2" data-id="{{ item.id }}" data-type="{{ modeltype }}" style="cursor: pointer;"></i>
+            {% endif %}
+            <span class="like-count">{{ item.likes_count|default:0 }}</span>
+          </button>
+
+          <!-- Comment count -->
+          <div class="d-flex align-items-center">
+            <i class="far fa-comment me-2"></i>
+            <span class="comment-count">{{ comments.count|default:0 }} comments</span>
+          </div>
+
+          <!-- Download button -->
+          <a href="{% url 'audio_file_download' modeltype=modeltype pk=item.id %}" class="btn btn-sm btn-outline-primary d-flex align-items-center p-2" title="Download">
+            <i class="fas fa-download me-2"></i>
+            <span>Download</span>
+          </a>
         </div>
 
-        {% comment %} <div class="mt-3">
-          <form method="post" action="{% url 'add_reply' comment.id %}">
-            {% csrf_token %}
-            <div class="form-group">
-              <textarea name="reply_body" class="form-control" rows="2" placeholder="Write a reply..."></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary btn-sm mt-2">Reply</button>
-          </form>
-        </div> {% endcomment %}
+        <!-- Right: Tags -->
+        <div class="d-flex align-items-center flex-wrap">
+          {% for tag in item.tags.all %}
+            <a href="{% url 'home' %}?tags={{tag.id}}" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.85rem;">#{{ tag.name }}</a>
+          {% empty %}
+            <span class="text-muted small">No tags</span>
+          {% endfor %}
+        </div>
+      </div>
     </div>
+  </div>
 
-    {% endfor %}
+  <!-- ✅ SEZIONE COMMENTI - Layout migliorato -->
+  <div class="row mt-4">
+    <div class="col-12">
+      
+      <!-- Add Comment Form -->
+      <div class="bg-white p-4 rounded shadow-sm mb-4">
+        <h4 class="mb-3">
+          <i class="far fa-comment me-2"></i>Add a Comment
+        </h4>
+        <form method="post" action="{% url 'add_comment' pk=item.id modeltype=modeltype %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            {{ commentForm.body }}
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-paper-plane me-1"></i>Post Comment
+          </button>
+        </form>
+      </div>
+
+      <!-- Comments List -->
+      <div class="bg-white p-4 rounded shadow-sm">
+        <h4 class="mb-4">
+          <i class="fas fa-comments me-2"></i>Comments ({{ comments.count }})
+        </h4>
+
+        {% for comment in comments %}
+        <div class="border-bottom pb-4 mb-4 comment-container">
+          <!-- Comment Header -->
+          <div class="d-flex align-items-center mb-3">
+            <a href="{% url 'profile' pk=comment.user.id %}" class="text-decoration-none">
+              <img src="{{ comment.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle me-3" width="40" height="40">
+            </a>
+            <div class="flex-grow-1">
+              <a href="{% url 'profile' pk=comment.user.id %}" class="text-decoration-none text-dark fw-bold">
+                {{ comment.user.username }}
+              </a>
+              <div class="text-muted small">{{ comment.created_at|timesince }} ago</div>
+            </div>
+            
+            <!-- Delete button for comment owner -->
+            {% if comment.user == request.user %}
+            <form method="POST" action="{% url 'delete_comment' pk=comment.id modtype=modeltype upl_pk=item.id %}">
+              {% csrf_token %}
+              <button type="button" class="btn btn-outline-danger btn-sm delete-btn">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+
+          <!-- Comment Body -->
+          <div class="mb-3">
+            <p class="mb-0">{{ comment.body }}</p>
+          </div>
+
+          <!-- Comment Actions -->
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+              <!-- Like comment -->
+              <button type="button" class="btn btn-sm btn-light d-flex align-items-center p-1">
+                {% if comment in liked_comments %}
+                  <i class="fas fa-heart like-icon comment text-danger me-1" data-id="{{ comment.id }}" data-type="comment" style="cursor: pointer;"></i>
+                {% else %}
+                  <i class="far fa-heart like-icon comment text-dark me-1" data-id="{{ comment.id }}" data-type="comment" style="cursor: pointer;"></i>
+                {% endif %}
+                <span class="like-count small">{{ comment.likes_count|default:0 }}</span>
+              </button>
+
+              <!-- Reply button -->
+              <button type="button" class="btn btn-sm btn-light d-flex align-items-center p-1 comment_reply">
+                <i class="far fa-comment me-1"></i>
+                <span class="small">Reply</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Reply Form (hidden by default) -->
+          <div class="mt-3">
+            <form method="post" action="{% url 'add_comment_with_parent' pk=item.id modeltype=modeltype parent_id=comment.id %}" class="d-none reply-form">
+              {% csrf_token %}
+              <div class="d-flex gap-2">
+                {{ commentForm.body }}
+                <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+          <i class="far fa-comment fa-3x text-muted mb-3"></i>
+          <p class="text-muted">No comments yet. Be the first to comment!</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% include "components/delete_confirm_modal.html" %}
+
+<script>
+// ✅ TRACKING AUDIO PLAY quando utente preme play
+document.addEventListener('DOMContentLoaded', function() {
+    const audioPlayers = document.querySelectorAll('.audio-player');
     
-    {% include "components/delete_confirm_modal.html"%}
-
-    <script>
-      document.querySelectorAll('.comment_reply').forEach(button => {
-        button.addEventListener('click', function() {
-          console.log('Reply button clicked');
-          const replyForm = this.closest('.row').querySelector('.reply-form');
-          if (replyForm) {
-            console.log('Reply form found');
-            if (replyForm.classList.contains('d-none')) {
-              replyForm.classList.remove('d-none');
-              replyForm.classList.add('d-flex');
-                const username = this.closest('.comment-container').querySelector('h5').textContent.trim();
-                replyForm.querySelector('textarea').value = `@${username} `;
-            } else {
-              replyForm.classList.remove('d-flex');
-              replyForm.classList.add('d-none');
+    audioPlayers.forEach(player => {
+        let hasPlayed = false;
+        
+        player.addEventListener('play', function() {
+            if (!hasPlayed) {
+                hasPlayed = true;
+                
+                const modeltype = this.getAttribute('data-modeltype');
+                const pk = this.getAttribute('data-pk');
+                const trackUrl = `/${modeltype}/${pk}/track_play/`;
+                
+                fetch(trackUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ Audio play tracked');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error tracking audio play:', error);
+                });
             }
-          }
         });
-      });    
-    </script>
+    });
+});
+
+// ✅ REPLY FUNCTIONALITY
+document.querySelectorAll('.comment_reply').forEach(button => {
+    button.addEventListener('click', function() {
+        const replyForm = this.closest('.comment-container').querySelector('.reply-form');
+        if (replyForm) {
+            if (replyForm.classList.contains('d-none')) {
+                replyForm.classList.remove('d-none');
+                replyForm.classList.add('d-block');
+                const username = this.closest('.comment-container').querySelector('.fw-bold').textContent.trim();
+                replyForm.querySelector('textarea').value = `@${username} `;
+                replyForm.querySelector('textarea').focus();
+            } else {
+                replyForm.classList.remove('d-block');
+                replyForm.classList.add('d-none');
+            }
+        }
+    });
+});
+</script>
 
 {% endblock %}

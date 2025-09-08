@@ -62,18 +62,6 @@ class UploadableItem(models.Model):
             object_id=self.id
         ).count()
 
-    def get_tags_as_string(self):
-        """Restituisce i tag come stringa separata da virgole"""
-        return ', '.join([tag.name for tag in self.tags.all()])
-    
-    def set_tags_from_string(self, tag_string):
-        """Imposta i tag da una stringa separata da virgole"""
-        if tag_string:
-            tag_names = [name.strip().lower() for name in tag_string.split(',') if name.strip()]
-            tags = [Tag.objects.get_or_create(name=name)[0] for name in tag_names]
-            self.tags.set(tags)
-        else:
-            self.tags.clear()
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -83,7 +71,7 @@ class UploadableItem(models.Model):
                 img_path = self.cover_image.path
                 img = Image.open(img_path)
                 max_size = (800, 800)  # es. max 800x800 px
-                img.thumbnail(max_size, Image.ANTIALIAS)
+                img.thumbnail(max_size, Image.LANCZOS)
                 img.save(img_path)
             except Exception as e:
                 print(f"Errore nel ridimensionamento immagine: {e}")

@@ -96,9 +96,12 @@ class ProfileUpdateForm(forms.ModelForm):  # Rinominato da ProfileImageUpdateFor
             }),
         }
 class LoopForm(forms.ModelForm):
-    tags = forms.CharField(
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control select2', 'style': 'width:100%;'}),
         required=False,
-        help_text="Inserisci i tag separati da virgole"
+        label="Tags",
+        help_text="Select one or more"
     )
 
     class Meta:
@@ -111,36 +114,25 @@ class LoopForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields['tags'].initial = self.instance.get_tags_as_string()
+            self.fields['tags'].initial = self.instance.tags.all()
     
-    def save(self, commit=True):
-        instance = super().save(commit)
-        if commit:
-            tag_string = self.cleaned_data.get('tags', '')
-            instance.set_tags_from_string(tag_string)
-        return instance
-
 class SamplePackForm(forms.ModelForm):
-    tags = forms.CharField(  # ← Cambia da 'tags_input' a 'tags' per coerenza
+    tags = forms.ModelMultipleChoiceField(
+        queryset=Tag.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control select2', 'style': 'width:100%;'}),
         required=False,
-        help_text="Inserisci i tag separati da virgole"
+        label="Tags",
+        help_text="Select one or more"
     )
     
     class Meta:
         model = SamplePack
         fields = ['title', 'description', 'zip_file', 'cover_image', 'preview_audio']
-    
+        
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields['tags'].initial = self.instance.get_tags_as_string()
-    
-    def save(self, commit=True):
-        instance = super().save(commit)
-        if commit:
-            tag_string = self.cleaned_data.get('tags', '')
-            instance.set_tags_from_string(tag_string)
-        return instance
+            self.fields['tags'].initial = self.instance.tags.all()
     
 class CommentForm(forms.ModelForm):
     class Meta:
