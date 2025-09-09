@@ -11,7 +11,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .forms import *
-from .utils import get_ordered_loads, process_tags_from_request
+from .utils import get_ordered_loads, process_tags_from_request, get_most_liked_loads
 import logging
 from datetime import date
 from urllib.parse import unquote_plus
@@ -140,6 +140,8 @@ def home(request, *args, **kwargs):
     tmp_name = "home.html"
     uploads = get_ordered_loads()
 
+    most_liked = get_most_liked_loads(limit=5)
+
     cleaned_data = {
             'title': request.GET.get('title', ''),
             'tags': request.GET.getlist('tags'),
@@ -190,7 +192,8 @@ def home(request, *args, **kwargs):
 
     context = {
         'uploads': uploads,
-        'is_filtered': any(param in request.GET for param in cleaned_data.keys())
+        'is_filtered': any(param in request.GET for param in cleaned_data.keys()),
+        'most_liked': most_liked
     }
 
     return render(request, tmp_name, context)
@@ -262,13 +265,21 @@ def upload(request):
 @login_required
 def upload_loop(request):
     if request.method == 'POST':
-        form = LoopForm(request.POST, request.FILES)
+
+        post_data, new_tags = process_tags_from_request(request)
+
+        form = LoopForm(post_data, request.FILES)
         if form.is_valid():
             loop = form.save(commit=False)
             loop.user = request.user
             loop.save()
-            form.save_m2m()  # Salva le relazioni many-to-many (inclusi i tag)
 
+            tags_from_form = form.cleaned_data.get('tags')
+            if tags_from_form is not None:
+                loop.tags.set(tags_from_form)
+            else:
+                loop.tags.set(new_tags)
+            
             url = reverse('uploadable_detail', args=["loop", loop.id])
             messages.success(
                 request,

@@ -145,6 +145,11 @@ $(document).ready(function() {
                 <div class="mb-3">
                   {{ filterForm.upload_type.label_tag }} {{ filterForm.upload_type }}
                 </div>
+                <div class="mb-3">
+                  {{ filterForm.uploaded_by.label_tag }} {{ filterForm.uploaded_by }} 
+                </div>
+                
+                <!-- Bottone reset filtri -->
                 <div class="d-grid gap-2">
                   <button type="button" id="clearFiltersBtn" class="btn btn-outline-secondary">
                     <i class="fas fa-times me-1"></i>Reset Filters

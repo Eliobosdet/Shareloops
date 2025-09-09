@@ -24,6 +24,23 @@ def get_ordered_loads(u=None):
     # Unisci e ordina per uploaded_at (decrescente)
     return caricamenti_ordinati
 
+def get_most_liked_loads(limit=5):
+    from .models import Loop, SamplePack  # Import locale per evitare circular imports
+    
+    lista_modello1 = Loop.objects.all()
+    lista_modello2 = SamplePack.objects.all()
+
+    caricamenti = []
+    for obj in chain(lista_modello1, lista_modello2):
+        caricamenti.append({
+            'obj': obj,
+            'modeltype': obj.__class__.__name__,
+        })
+    
+    caricamenti_ordinati = sorted(caricamenti, key=lambda x: x['obj'].likes.count(), reverse=True)
+
+    return caricamenti_ordinati[:limit]
+
 def process_tags_from_request(request):
     """
     Estrae e processa i tag dal campo 'tags' della richiesta POST.
