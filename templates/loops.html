@@ -50,8 +50,13 @@
       </div>
       <div class="flex-grow-1 d-flex flex-column justify-content-center">
         <!-- Audio player -->
-        <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;">
+        {% comment %} <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;">
           <source src="{% url 'track_audio_play' modeltype='Loop' pk=loop.id %}" type="audio/mpeg">
+        </audio> {% endcomment %}
+
+        <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;" 
+            onplay="registerPlay('loop', '{{ loop.id }}')">
+          <source src="{{ loop.audio_file.url }}" type="audio/mpeg">
         </audio>
         
         <!-- Description -->
@@ -82,7 +87,7 @@
         </a>
 
         <!-- Download button -->
-        <a href="{% url 'audio_file_download' modeltype='Loop' pk=loop.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Download">
+        <a href="{% url 'audio_file_download' pk=loop.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Download">
           <i class="fas fa-download text-dark me-1"></i>
           <span class="download-count small text-muted">{{ loop.download_count|default:0 }}</span>
         </a>

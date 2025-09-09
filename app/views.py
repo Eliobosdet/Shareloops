@@ -11,8 +11,9 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from .forms import *
-from .utils import get_ordered_loads
+from .utils import get_ordered_loads, process_tags_from_request
 import logging
+from datetime import date
 from urllib.parse import unquote_plus
 # from django.contrib.auth.forms import AuthenticationForm
 
@@ -282,12 +283,22 @@ def upload_loop(request):
 @login_required
 def upload_samplepack(request):
     if request.method == 'POST':
-        form = SamplePackForm(request.POST, request.FILES)
+        print(f"🔍 ALL POST data: {dict(request.POST)}")
+
+        post_data, new_tags = process_tags_from_request(request)
+
+        form = SamplePackForm(post_data, request.FILES)
         if form.is_valid():
             samplepack = form.save(commit=False)
             samplepack.user = request.user
             samplepack.save()
-            form.save_m2m()  # Salva le relazioni many-to-many (inclusi i tag)
+
+            tags_from_form = form.cleaned_data.get('tags')
+            if tags_from_form is not None:
+                samplepack.tags.set(tags_from_form)
+            else:
+                samplepack.tags.set(new_tags)
+
 
             url = reverse('uploadable_detail', args=["samplepack", samplepack.id])
             messages.success(
@@ -297,6 +308,7 @@ def upload_samplepack(request):
             )
             form = SamplePackForm()
     else:
+        print("GET request - rendering empty form")
         form = SamplePackForm()
     return render(request, 'user/upload_samplepack.html', {'form': form})
 
@@ -321,23 +333,8 @@ def edit_uploadable(request, pk, modeltype):
             return redirect('profile', pk=request.user.pk)
 
         print(f"tags: {request.POST.getlist('tags')}")
-        tags = request.POST.getlist('tags')
 
-        new_tags = []
-
-        for tag in tags:
-            if tag.isdigit():
-                tag_id = int(tag)
-                if Tag.objects.filter(id=tag_id).exists():
-                    new_tags.append(tag_id)
-            else:
-                tag_name = tag.strip()
-                if tag_name:
-                    new_tag, created = Tag.objects.get_or_create(name=tag_name)
-                    new_tags.append(new_tag.id)
-        post_data = request.POST.copy()
-        post_data.setlist('tags', [str(pk) for pk in new_tags])
-        print(f"🔍 ALL POST data: {dict(post_data)}")
+        post_data, new_tags = process_tags_from_request(request)
 
         form = form_class(post_data, request.FILES, instance=obj)
         if form.is_valid():
@@ -459,8 +456,8 @@ def delete_comment(request, pk, modtype, upl_pk):
     return redirect('uploadable_detail', modeltype=modtype, pk=upl_pk)
 
 @login_required
-def audio_file_download(request, modeltype, pk):
-    content_type = ContentType.objects.get(model=modeltype.lower())
+def audio_file_download(request, pk):
+    content_type = ContentType.objects.get(model='loop')
     item = get_object_or_404(content_type.model_class(), pk=pk)
 
     # Registra il download se non è l'autore
@@ -477,7 +474,26 @@ def audio_file_download(request, modeltype, pk):
     response['Content-Disposition'] = f'attachment; filename="{item.audio_file.name}"'
     return response
 
+@login_required
+def zip_file_download(request, pk):
+    item = get_object_or_404(SamplePack, pk=pk)
+
+    # Registra il download se non è l'autore
+    if request.user != item.user:
+        _, created = Download.objects.get_or_create(
+            user=request.user,
+            content_type=ContentType.objects.get_for_model(SamplePack),
+            object_id=item.pk
+        )
+
+    # Serve il file direttamente (senza redirect)
+    file = item.zip_file.open('rb')
+    response = FileResponse(file, content_type="application/zip")
+    response['Content-Disposition'] = f'attachment; filename="{item.zip_file.name}"'
+    return response
+
 def track_audio_play(request, modeltype, pk):
+    # Recupera il modello dinamico
     content_type = ContentType.objects.get(model=modeltype.lower())
     item = get_object_or_404(content_type.model_class(), pk=pk)
 
@@ -490,22 +506,36 @@ def track_audio_play(request, modeltype, pk):
     else:
         ip_address = request.META.get('REMOTE_ADDR')
 
-    # Se l'utente è loggato, usa user, altrimenti usa solo l'IP
+    # Se l'utente è loggato, usa user, altrimenti usa ip_address
     user = request.user if request.user.is_authenticated else None
+    today = date.today()
 
-    # Cerca un AudioPlay per utente o IP
+    # Costruisci i filtri per trovare l'ascolto di oggi
+    filters = {
+        'content_type': content_type,
+        'object_id': item.pk,
+        'date': today,
+    }
+    if user:
+        filters['user'] = user
+    else:
+        filters['user'] = None
+        filters['ip_address'] = ip_address
+
+    # Cerca o crea un AudioPlay per oggi
     audioplay, created = AudioPlay.objects.get_or_create(
-        user=user,
-        content_type=content_type,
-        object_id=item.pk,
-        defaults={'played_at': timezone.now(), 'ip_address': ip_address}
+        defaults={'played_at': timezone.now()},
+        **filters
     )
 
-    print(f"AudioPlay created: {created}, played_at: {audioplay.played_at}, ip_address: {audioplay.ip_address}")
-
-    # Aggiorna played_at solo se non è stato creato oggi
-    if not created and audioplay.played_at.date() < timezone.now().date():
+    if created:
+        print(f"Nuovo AudioPlay creato per {today}, ip={ip_address}, user={user}")
+    else:
+        # Aggiorna played_at se già esiste
         audioplay.played_at = timezone.now()
-        audioplay.save(update_fields=['played_at'])
+        if not user:  # aggiorna IP solo per anonimi
+            audioplay.ip_address = ip_address
+        audioplay.save(update_fields=['played_at', 'ip_address'])
+        print(f"AudioPlay già presente per oggi; aggiornato played_at a {audioplay.played_at}")
 
     return redirect(item.audio_file.url)

@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import pre_delete, post_save
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from functools import partial
 from PIL import Image
 from .keys import KEY_CHOICES
@@ -62,6 +63,15 @@ class UploadableItem(models.Model):
             object_id=self.id
         ).count()
 
+    def likes_count(self):
+        """Restituisce il numero di like per questo item"""
+        return self.likes.count()
+    
+    def comments_count(self):
+        """Restituisce il numero di commenti per questo item"""
+        content_type = ContentType.objects.get_for_model(self)
+        return Comment.objects.filter(content_type=content_type, object_id=self.id).count()
+    
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -76,13 +86,6 @@ class UploadableItem(models.Model):
             except Exception as e:
                 print(f"Errore nel ridimensionamento immagine: {e}")
 
-    def likes_count(self):
-        return self.likes.count()
-    
-    def comments_count(self):
-        content_type = ContentType.objects.get_for_model(self)
-        return Comment.objects.filter(content_type=content_type, object_id=self.id).count()
-    
 def validate_audio_extension(value):
     ext = os.path.splitext(value.name)[1].lower()
     if ext not in ['.wav', '.mp3', '.flac']:
@@ -329,7 +332,19 @@ class AudioPlay(models.Model):
     object_id = models.PositiveIntegerField()
     item = GenericForeignKey('content_type', 'object_id')
     ip_address = models.GenericIPAddressField(null=True, blank=True)
+    date = models.DateField(default=timezone.now)
     played_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'content_type', 'object_id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'content_type', 'object_id', 'date'],
+                name='unique_play_per_user_per_day',
+                condition=~models.Q(user=None)  # vincolo solo se user è valorizzato
+            ),
+            models.UniqueConstraint(
+                fields=['ip_address', 'content_type', 'object_id', 'date'],
+                name='unique_play_per_ip_per_day',
+                condition=models.Q(user=None)  # vincolo solo per anonimi
+            )
+        ]

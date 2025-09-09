@@ -50,13 +50,21 @@
         </div>
         
         <div class="flex-grow-1 d-flex flex-column justify-content-center">
-          <!-- Audio player -->
-          <audio controls controlsList="nodownload" class="w-100 mb-3 audio-player" 
-                 style="height: 50px;" 
-                 data-modeltype="{{ modeltype }}" 
-                 data-pk="{{ item.id }}">
-            <source src="{{ item.audio_file.url }}" type="audio/mpeg">
-          </audio>
+
+          {% if item.audio_file %}
+            <!-- Audio player -->
+            <audio controls controlsList="nodownload" class="w-100 mb-3 audio-player" 
+                  style="height: 50px;" 
+                  data-modeltype="{{ modeltype }}" 
+                  data-pk="{{ item.id }}">
+              <source src="{{ item.audio_file.url }}" type="audio/mpeg">
+            </audio>
+          {% elif item.zip_file %}
+            <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+              <i class="fas fa-info-circle me-2"></i>
+              This is a SamplePack without audio preview. You can download it using the button below.
+            </div>
+          {% endif %}
           
           <!-- Description -->
           {% if item.description %}
@@ -118,10 +126,14 @@
           </div>
 
           <!-- Download button -->
-          <a href="{% url 'audio_file_download' modeltype=modeltype pk=item.id %}" class="btn btn-sm btn-outline-primary d-flex align-items-center p-2" title="Download">
-            <i class="fas fa-download me-2"></i>
-            <span>Download</span>
-          </a>
+          {% if modeltype == 'loop' %}
+            <a href="{% url 'audio_file_download' pk=item.id %}" class="btn btn-sm btn-outline-primary d-flex align-items-center p-2" title="Download">
+          {% else %}
+            <a href="{% url 'zip_file_download' pk=item.id %}" class="btn btn-sm btn-outline-primary d-flex align-items-center p-2" title="Download">
+          {% endif %}
+                <i class="fas fa-download me-2"></i>
+              <span>Download</span>
+            </a>
         </div>
 
         <!-- Right: Tags -->

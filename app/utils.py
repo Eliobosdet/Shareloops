@@ -23,3 +23,29 @@ def get_ordered_loads(u=None):
 
     # Unisci e ordina per uploaded_at (decrescente)
     return caricamenti_ordinati
+
+def process_tags_from_request(request):
+    """
+    Estrae e processa i tag dal campo 'tags' della richiesta POST.
+    Restituisce una lista di istanze Tag.
+    """
+    from .models import Tag  # Import locale per evitare circular imports
+
+    tags = request.POST.getlist('tags')
+
+    new_tags = []
+
+    for tag in tags:
+        if tag.isdigit():
+            tag_id = int(tag)
+            if Tag.objects.filter(id=tag_id).exists():
+                new_tags.append(tag_id)
+        else:
+            tag_name = tag.strip()
+            if tag_name:
+                new_tag, created = Tag.objects.get_or_create(name=tag_name)
+                new_tags.append(new_tag.id)
+    post_data = request.POST.copy()
+    post_data.setlist('tags', [str(pk) for pk in new_tags])
+    print(f"🔍 ALL POST data: {dict(post_data)}")
+    return post_data, new_tags

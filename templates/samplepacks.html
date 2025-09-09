@@ -4,130 +4,133 @@
 
 {% block head %}
   <script src="{% static 'likes.js' %}"></script>
+  <script src="{% static 'audioplays.js' %}"></script>
 {% endblock %}
 
 {% block title %}SamplePacks{% endblock %}
+
 {% block content %}
 <div class="container mt-5" id="samplepacks-container">
   <h1>SamplePacks</h1>
   <ul class="list-unstyled">
     {% for samplepack in samplepacks %}
-    <div class="row mt-3 border p-3 shadow-sm bg-light">
-      <li>
-        <img src="{{ samplepack.cover_image.url }}" alt="(SamplePack Image)" width="100" height="100" />
-        <h2>{{ samplepack.title }}</h2>
-          <audio controls>
-            <source src="{% url 'audio_file_download' modeltype='SamplePack' pk=samplepack.id %}" type="audio/mpeg">
-          </audio>
-          
-          <hr>
-        <p>{{ samplepack.description }}</p>
-        <hr>
-        <p class="text-end">
-            <small>
-            <img src="{{ samplepack.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle" width="30" height="30">
-            <a href="{% url 'profile' pk=samplepack.user.id %}"> {{ samplepack.user.username }}</a>
-            </small>
-        </p>      
-      </li>
-      <div class="d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-3">
-            <!-- Like button -->
-            <div class="like-container me-2">
-            {% if request.user in samplepack.likes.all %}
-              <i class="fas fa-heart fa-lg like-icon uploadable text-danger" data-id="{{ samplepack.id }}" data-type="SamplePack"></i>
-            {% else %}
-              <i class="far fa-heart fa-lg like-icon uploadable" data-id="{{ samplepack.id }}" data-type="SamplePack"></i>
-            {% endif %}
-            <span class="like-count ms-1">{{ samplepack.likes.count|default:0 }}</span>
+    <div class="row mt-4 p-3 shadow-sm bg-white rounded">
+      <div class="col-12">
+        
+        <!-- Header: User info e titolo -->
+        <div class="d-flex align-items-center mb-3 justify-content-between">
+          <div class="d-flex align-items-center">
+            <a href="{% url 'profile' pk=samplepack.user.id %}">
+              <img src="{{ samplepack.user.userprofile.image.url }}" alt="Profile Image" class="rounded-circle me-3" width="40" height="40">
+            </a>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center">
+                <a href="{% url 'profile' pk=samplepack.user.id %}" class="text-decoration-none text-dark fw-bold me-2">{{ samplepack.user.username }}</a>
+                <span class="text-muted small">•</span>
+                <span class="text-muted small ms-2">{{ samplepack.uploaded_at|timesince }} ago</span>
+              </div>
+              <a href="{% url 'uploadable_detail' modeltype='samplepack' pk=samplepack.id %}" class="text-decoration-none text-dark">
+                <h5 class="mb-0 mt-1">{{ samplepack.title }}</h5>
+              </a>
             </div>
+          </div>
+          
+          <!-- Stats in header -->
+          <div class="d-flex mb-2">
+            <div class="d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-play text-dark me-1"></i>
+                <span class="small text-muted">{{ samplepack.audioplay_count|default:0 }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-            <!-- Comment count -->
-            <a href="{% url 'uploadable_detail' modeltype='SamplePack' pk=samplepack.id %}" style="color: inherit; text-decoration: none;" class="me-2">
-              <i class="far fa-comment fa-lg"></i>
-              <span class="comment-count ms-1">{{ samplepack.comments_count }}</span>
+        <!-- Main content: Cover image + Audio/Preview -->
+        <div class="d-flex mb-3">
+          <div class="me-3 flex-shrink-0">
+            <a href="{% url 'uploadable_detail' modeltype='samplepack' pk=samplepack.id %}">
+              <img src="{{ samplepack.cover_image.url }}" alt="{{ samplepack.title }}" class="rounded" width="120" height="120" style="object-fit: cover;">
+            </a>
+          </div>
+          
+          <div class="flex-grow-1 d-flex flex-column justify-content-center">
+            <!-- Audio player or Preview info -->
+            {% if samplepack.audio_file %}
+              <!-- Audio preview disponibile -->
+              <audio controls controlsList="nodownload" class="w-100 mb-2 audio-player" 
+                     style="height: 40px;" 
+                     data-modeltype="samplepack" 
+                     data-pk="{{ samplepack.id }}">
+                <source src="{{ samplepack.audio_file.url }}" type="audio/mpeg">
+              </audio>
+            {% elif samplepack.preview_audio %}
+              <!-- Preview audio alternativo -->
+              <audio controls controlsList="nodownload" class="w-100 mb-2 audio-player" 
+                     style="height: 40px;" 
+                     data-modeltype="samplepack" 
+                     data-pk="{{ samplepack.id }}">
+                <source src="{{ samplepack.preview_audio.url }}" type="audio/mpeg">
+              </audio>
+            {% else %}
+              <!-- Nessun preview disponibile -->
+              <div class="alert alert-info d-flex align-items-center mb-2" role="alert" style="height: 40px;">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>No audio preview available - Download to listen</small>
+              </div>
+            {% endif %}
+            
+            <!-- Description -->
+            {% if samplepack.description %}
+            <p class="text-muted mb-2 small">{{ samplepack.description|truncatewords:20 }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Footer: Actions e Tags -->
+        <div class="d-flex justify-content-between align-items-center border-top pt-3">
+          <!-- Left: Actions (bottoni) -->
+          <div class="d-flex align-items-center gap-4">
+            <!-- Like button -->
+            <button type="button" class="btn btn-sm btn-light d-flex align-items-center like-container p-1" title="Like">
+              {% if request.user in samplepack.likes.all %}
+                <i class="fas fa-heart like-icon uploadable text-danger me-1" data-id="{{ samplepack.id }}" data-type="SamplePack" style="cursor: pointer;"></i>
+              {% else %}
+                <i class="far fa-heart like-icon uploadable text-dark me-1" data-id="{{ samplepack.id }}" data-type="SamplePack" style="cursor: pointer;"></i>
+              {% endif %}
+              <span class="like-count small text-muted">{{ samplepack.likes.count|default:0 }}</span>
+            </button>
+
+            <!-- Comment button -->
+            <a href="{% url 'uploadable_detail' modeltype='samplepack' pk=samplepack.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Comment">
+              <i class="far fa-comment me-1"></i>
+              <span class="comment-count small">{{ samplepack.comments_count|default:0 }}</span>
             </a>
 
-            <!-- Download count -->
-            <div class="download-container">
-            <i class="fas fa-download"></i>
-            <span class="ms-1">{{ samplepack.download_count|default:0 }}</span>
-            </div>
-        </div>
-        <div>
-          {% for tag in samplepack.tags.all %}
-            <a href="#" class="badge bg-secondary text-decoration-none">{{ tag.name }}</a>
-          {% empty %}
-            <span class="text-muted">No tags</span>
-          {% endfor %}
+            <!-- Download button -->
+            <a href="{% url 'zip_file_download' pk=samplepack.id %}" class="btn btn-sm btn-light d-flex align-items-center p-1" title="Download">
+              <i class="fas fa-download text-dark me-1"></i>
+              <span class="download-count small text-muted">{{ samplepack.download_count|default:0 }}</span>
+            </a>
+          </div>
+
+          <!-- Right: Tags -->
+          <div class="d-flex align-items-center flex-wrap">
+            {% for tag in samplepack.tags.all %}
+              <a href="{% url 'home' %}?tags={{tag.id}}" class="badge bg-light text-dark text-decoration-none me-1 mb-1" style="font-size: 0.75rem;">#{{ tag.name }}</a>
+            {% empty %}
+              <span class="text-muted small">Nessun tag</span>
+            {% endfor %}
+          </div>
         </div>
       </div>
-      </div>
-      {% empty %}
-      <li>
-        <p>Nessun samplepack disponibile.</p>
-      </li>
-      {% endfor %}
+    </div>
+    {% empty %}
+    <div class="text-center py-5">
+      <p class="text-muted">Nessun samplepack disponibile.</p>
+    </div>
+    {% endfor %}
   </ul>
 </div>
 
-<script>
-  {% comment %} document.addEventListener("DOMContentLoaded", function () {
-    // Funzione per ottenere il token CSRF dai cookie
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
-        }
-      }
-      return cookieValue;
-    }
-  
-    const csrftoken = getCookie('csrftoken');
-  
-    document.querySelectorAll(".like-icon").forEach(icon => {
-      icon.addEventListener("click", function () {
-        const samplepackId = this.getAttribute("data-id");
-        const modelType = this.getAttribute("data-type");
-        const likeCountSpan = this.nextElementSibling; // assume <span> is right after the icon
-  
-        const url = `/like/${samplepackId}/${modelType}/`;
-
-        fetch(url, {
-          method: "POST",
-          headers: {
-            "X-CSRFToken": csrftoken,
-            "Content-Type": "application/json"
-          }
-        })
-        .then(response => {
-          if (response.ok) return response.json();
-          else throw new Error("Errore nella richiesta AJAX");
-        })
-        .then(data => {
-          // Cambia stile dell'icona
-          if (data.liked) {
-            this.classList.remove("far");
-            this.classList.add("fas");
-          } else {
-            this.classList.remove("fas");
-            this.classList.add("far");
-          }
-          // Aggiorna conteggio like
-          likeCountSpan.textContent = data.likes_count;
-        })
-        .catch(error => {
-          console.error("Errore:", error);
-        });
-      });
-    });
-  }); {% endcomment %}
-</script>
-  
 {% endblock %}
