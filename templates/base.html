@@ -148,7 +148,7 @@ $(document).ready(function() {
                 <div class="mb-3">
                   {{ filterForm.uploaded_by.label_tag }} {{ filterForm.uploaded_by }} 
                 </div>
-                
+
                 <!-- Bottone reset filtri -->
                 <div class="d-grid gap-2">
                   <button type="button" id="clearFiltersBtn" class="btn btn-outline-secondary">
@@ -162,7 +162,7 @@ $(document).ready(function() {
           <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
             {% if request.user.is_authenticated %}
               <li class="nav-item"><a class="nav-link" href="{% url 'upload' %}">Load</a></li>
-              <li class="nav-item"><a class="nav-link" href="{% url 'profile' pk=user.id %}">Profile</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'profile' pk=request.user.id %}">Profile</a></li>
               <li class="nav-item"><a class="nav-link" href="{% url 'logout' %}">Logout</a></li>
             {% else %}
               <li class="nav-item mx-auto"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

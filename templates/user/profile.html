@@ -250,13 +250,20 @@
                       </a>
                     </div>
                     <div class="flex-grow-1 d-flex flex-column justify-content-center">
-                      <!-- Audio player -->
-                      <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;" 
-                            onplay="registerPlay('{{ load.modeltype }}', '{{ load.obj.id }}')">
-                        <source src="{{ load.obj.audio_file.url }}" type="audio/mpeg">
-                      </audio>
+                      {% if load.obj.audio_file %}
+                        <!-- Audio player -->
+                        <audio controls controlsList="nodownload" class="w-100 mb-2" style="height: 40px;" 
+                              onplay="registerPlay('{{ load.modeltype }}', '{{ load.obj.id }}')">
+                          <source src="{{ load.obj.audio_file.url }}" type="audio/mpeg">
+                        </audio>
+                      {% else %}
+                        <!-- Nessun preview disponibile -->
+                        <div class="alert alert-info d-flex align-items-center mb-2" role="alert" style="height: 40px;">
+                          <i class="fas fa-info-circle me-2"></i>
+                          <small>No audio preview available</small>
+                        </div>
+                      {% endif %}
 
-                      
                       <!-- Description -->
                       {% if load.obj.description %}
                       <p class="text-muted mb-2 small">{{ load.obj.description|truncatewords:20 }}</p>
