@@ -73,10 +73,12 @@ class CustomLoginForm(AuthenticationForm):
 
 
 class ProfileUpdateForm(forms.ModelForm):  # Rinominato da ProfileImageUpdateForm
+    
     class Meta:
         model = UserProfile  # o ProfileImage se non hai rinominato
         fields = ['image', 'bio', 'instagram', 'youtube', 'soundcloud']
         widgets = {
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
             'bio': forms.Textarea(attrs={
                 'class': 'form-control', 
                 'rows': 4, 
@@ -95,6 +97,12 @@ class ProfileUpdateForm(forms.ModelForm):  # Rinominato da ProfileImageUpdateFor
                 'placeholder': 'https://soundcloud.com/username'
             }),
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and getattr(self.instance, 'image', None):
+            self.fields['image'].initial = self.instance.image
+        
 class LoopForm(forms.ModelForm):
     tags = forms.ModelMultipleChoiceField(
         queryset=Tag.objects.all(),

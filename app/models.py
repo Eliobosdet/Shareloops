@@ -12,43 +12,66 @@ from PIL import Image
 from .keys import KEY_CHOICES
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+def validate_image_extension(value):
+    """ Validates that the uploaded file has an allowed image extension."""
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in ['.jpg', '.jpeg', '.png']:
+        raise ValidationError('Image format not supported. Use .jpg, .jpeg, or .png')
+
+def validate_coverimage_size(value):
+    """ Validates that the uploaded cover image does not exceed the maximum size."""
+    max_size = 5 * 1024 * 1024  # 5 MB
+    if value.size > max_size:
+        raise ValidationError('The cover image cannot exceed 5MB.')
+
+def validate_audio_extension(value):
+    """ Validates that the uploaded file has an allowed audio extension."""
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in ['.wav', '.mp3', '.flac']:
+        raise ValidationError('Audio format not supported. Use .wav, .mp3, or .flac')
+
+def validate_fileMB_size(value,size_MB=10):
+    """ Validates that the uploaded file does not exceed the specified maximum size in MB."""
+    max_size = size_MB * 1024 * 1024 
+    if value.size > max_size:
+        raise ValidationError(f'The audio file cannot exceed {size_MB}MB.')
+    
+# Partial functions for specific size limits
+validate_fileMB_size_20 = partial(validate_fileMB_size, size_MB=20)
+validate_fileMB_size_10 = partial(validate_fileMB_size, size_MB=10)
+
 class Genre(models.Model):
+    """ Model representing a music genre. """
     name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
 
 class Tag(models.Model):
+    """ Model representing a tag for categorizing items. """
     name = models.CharField(max_length=50, unique=True)
 
     def __str__(self):
         return self.name
 
-def validate_image_extension(value):
-    ext = os.path.splitext(value.name)[1].lower()
-    if ext not in ['.jpg', '.jpeg', '.png']:
-        raise ValidationError('Image format not supported. Use .jpg, .jpeg, or .png')
-
-def validate_coverimage_size(value):
-    max_size = 2 * 1024 * 1024  # 2 MB
-    if value.size > max_size:
-        raise ValidationError('The cover image cannot exceed 2MB.')
-
 class UploadableItem(models.Model):
+    """ Abstract base model for items that can be uploaded (Loop, SamplePack). """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     cover_image = models.ImageField(
+        upload_to='temp/',  # Temporary upload path, will be overridden in child models
         validators=[validate_image_extension, validate_coverimage_size]
     )
     tags = models.ManyToManyField(Tag, related_name='items_%(class)s', blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     likes = models.ManyToManyField(User, related_name='likes_%(class)s', blank=True)
+    
     class Meta:
         abstract = True
     
     def get_download_count(self):
-        """Restituisce il numero di download per questo item"""
+        """Get the number of downloads for this item."""
         content_type = ContentType.objects.get_for_model(self)
         return Download.objects.filter(
             content_type=content_type,
@@ -56,7 +79,7 @@ class UploadableItem(models.Model):
         ).count()
     
     def get_audioplay_count(self):
-        """Restituisce il numero di riproduzioni per questo item"""
+        """Get the number of audio plays for this item."""
         content_type = ContentType.objects.get_for_model(self)
         return AudioPlay.objects.filter(
             content_type=content_type,
@@ -64,11 +87,11 @@ class UploadableItem(models.Model):
         ).count()
 
     def likes_count(self):
-        """Restituisce il numero di like per questo item"""
+        """Get the number of likes for this item."""
         return self.likes.count()
     
     def comments_count(self):
-        """Restituisce il numero di commenti per questo item"""
+        """Get the number of comments for this item."""
         content_type = ContentType.objects.get_for_model(self)
         return Comment.objects.filter(content_type=content_type, object_id=self.id).count()
     
@@ -84,30 +107,18 @@ class UploadableItem(models.Model):
                 img.thumbnail(max_size, Image.LANCZOS)
                 img.save(img_path)
             except Exception as e:
-                print(f"Errore nel ridimensionamento immagine: {e}")
-
-def validate_audio_extension(value):
-    ext = os.path.splitext(value.name)[1].lower()
-    if ext not in ['.wav', '.mp3', '.flac']:
-        raise ValidationError('Audio format not supported. Use .wav, .mp3, or .flac')
-
-
-def validate_fileMB_size(value,size_MB=10):
-    max_size = size_MB * 1024 * 1024 
-    if value.size > max_size:
-        raise ValidationError('The audio file cannot exceed 10MB.')
-
-validate_fileMB_size_20 = partial(validate_fileMB_size, size_MB=20)
-validate_fileMB_size_10 = partial(validate_fileMB_size, size_MB=10)
-
+                print(f"Error resizing image: {e}")
 
 def user_directory_path(instance, filename, subfolder):
+    """Generates the upload path based on the user ID and specified subfolder."""
     return f'users/{instance.user.id}/{subfolder}/{filename}'
 
 def loop_audio_upload_path(instance, filename):
+    """Generates the upload path for loop audio files."""
     return user_directory_path(instance, filename, 'loops/audio')
 
 def loop_cover_upload_path(instance, filename):
+    """Generates the upload path for loop cover images."""
     return user_directory_path(instance, filename, 'loops/covers')
 
 class Loop(UploadableItem):
@@ -127,6 +138,13 @@ class Loop(UploadableItem):
     genre = models.ForeignKey(Genre, on_delete=models.SET_NULL, null=True, blank=True)
     time_signature_num = models.PositiveIntegerField(blank=True, null=True, default=4)
     time_signature_den = models.PositiveIntegerField(blank=True, null=True, default=4)
+
+    def save(self, *args, **kwargs):
+        if self.cover_image and 'temp/' in self.cover_image.path:
+            # Move the image to the correct folder
+            new_path = loop_cover_upload_path(self, os.path.basename(self.cover_image.name))
+            self.cover_image.name = new_path
+            super().save(*args, **kwargs)
 
     @property
     def download_count(self):
@@ -168,6 +186,13 @@ class SamplePack(UploadableItem):
         blank=True, null=True
     )
 
+    def save(self, *args, **kwargs):
+        if self.cover_image and 'temp/' in self.cover_image.path:
+            # Move the image to the correct folder
+            new_path = samplepack_cover_upload_path(self, os.path.basename(self.cover_image.name))
+            self.cover_image.name = new_path
+        super().save(*args, **kwargs)
+
     @property
     def download_count(self):
         return self.get_download_count()
@@ -190,71 +215,70 @@ class UserProfile(models.Model):
         default='defaultProfileImage.jpg',
         max_length=255
     )
-    # Aggiungi i nuovi campi
     bio = models.TextField(max_length=500, blank=True, null=True, help_text="Scrivi qualcosa su di te...")
     instagram = models.CharField(max_length=100, blank=True, null=True, help_text="Username Instagram (senza @)")
     youtube = models.URLField(blank=True, null=True, help_text="Link al tuo canale YouTube")
     soundcloud = models.URLField(blank=True, null=True, help_text="Link al tuo profilo SoundCloud")
     
     def save(self, *args, **kwargs):
-        # Sovrascrivi il salvataggio per rinominare il file
-        if self.image and self.image.name != 'defaultProfileImage.jpg':
-            # Ottieni l'estensione del file originale
-            ext = os.path.splitext(self.image.name)[1]
-            # Imposta il nuovo nome
-            self.image.name = f'img{ext}'  # Es: img.jpg, img.png
+        # If updating, check if image has changed, and delete old file if so
+        if self.image and hasattr(self, '_old_image') and self._old_image:
+            if (self._old_image != self.image and 
+                self._old_image.name != 'defaultProfileImage.jpg' and 
+                os.path.exists(self._old_image.path)):
+                os.remove(self._old_image.path)
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Profile of {self.user.username}"
     
     def total_likes_received(self):
-        """Calcola il totale dei like ricevuti su tutti i contenuti dell'utente"""
+        """Computes the total likes received on user's uploads"""
         total = 0
         
-        # Like sui Loop
+        # Loops' likes
         for loop in self.user.loop_set.all():
             total += loop.likes.count()
-        # Like sui SamplePack
+        # SamplePack's likes
         for samplepack in self.user.samplepack_set.all():
             total += samplepack.likes.count()
         
         return total
     
     def total_comments_received(self):
-        """Calcola il totale dei commenti ricevuti"""
+        """Computes the total comments received on user's uploads"""
         total = 0
-        
-        # Commenti sui Loop
+
+        # Loops' comments
         for loop in self.user.loop_set.all():
             total += loop.comments_count()
-        # Commenti sui SamplePack  
+        # SamplePack's comments
         for samplepack in self.user.samplepack_set.all():
             total += samplepack.comments_count()
         
         return total
     
     def total_downloads_received(self):
-        """Calcola il totale dei download ricevuti"""
+        """Computes the total downloads received on user's uploads"""
         total = 0
 
-        # Download dei Loop
+        # Loops' downloads
         for loop in self.user.loop_set.all():
             total += loop.download_count
-        # Download dei SamplePack
+        # SamplePack's downloads
         for samplepack in self.user.samplepack_set.all():
             total += samplepack.download_count
         
         return total
 
     def total_audioplays_received(self):
-        """Calcola il totale delle riproduzioni ricevute"""
+        """Computes the total audioplays received on user's uploads"""
         total = 0
 
-        # Riproduzioni dei Loop
+        # Loops' audioplays
         for loop in self.user.loop_set.all():
             total += loop.audioplay_count
-        # Riproduzioni dei SamplePack
+        # SamplePack's audioplays
         for samplepack in self.user.samplepack_set.all():
             total += samplepack.audioplay_count
         
@@ -262,6 +286,7 @@ class UserProfile(models.Model):
         
 @receiver(post_save, sender=User)
 def create_profile_image(sender, instance, created, **kwargs):
+    """Creates a UserProfile when a new User is created."""
     if created:
         try:
             UserProfile.objects.create(user=instance)
@@ -270,7 +295,7 @@ def create_profile_image(sender, instance, created, **kwargs):
         
 @receiver(pre_delete, sender=Loop)
 def delete_loop_files(sender, instance, **kwargs):
-    """Elimina i file quando il modello viene cancellato"""
+    """Delete files when a Loop instance is deleted."""
     if instance.audio_file:
         instance.audio_file.delete(save=False)
     if instance.cover_image:
@@ -278,7 +303,7 @@ def delete_loop_files(sender, instance, **kwargs):
         
 @receiver(pre_delete, sender=SamplePack)
 def delete_samplepack_files(sender, instance, **kwargs):
-    """Elimina i file quando il modello SamplePack viene cancellato"""
+    """Delete files when a SamplePack instance is deleted."""
     if instance.zip_file:
         instance.zip_file.delete(save=False)
     if instance.cover_image:
@@ -287,6 +312,7 @@ def delete_samplepack_files(sender, instance, **kwargs):
         instance.preview_audio.delete(save=False)
 
 class Comment(models.Model):
+    """ Model representing comments on Loop or SamplePack. """
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     upload = GenericForeignKey('content_type', 'object_id')
@@ -305,18 +331,20 @@ class Comment(models.Model):
     def replies_count(self):
         return self.replies.count()    
 
-class Repost(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
-    comment = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+# class Repost(models.Model):
+#     """ Model representing a repost of a Loop or SamplePack. """
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+#     object_id = models.PositiveIntegerField()
+#     content_object = GenericForeignKey('content_type', 'object_id')
+#     comment = models.TextField(blank=True, null=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('user', 'content_type', 'object_id')
+#     class Meta:
+#         unique_together = ('user', 'content_type', 'object_id')
 
 class Download(models.Model):
+    """ Model representing a download of a Loop or SamplePack. """
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -324,9 +352,11 @@ class Download(models.Model):
     downloaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+
         unique_together = ['user', 'content_type', 'object_id']
 
 class AudioPlay(models.Model):
+    """ Model representing an audio play of a Loop or SamplePack. """
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -336,15 +366,16 @@ class AudioPlay(models.Model):
     played_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
+        """ Ensure unique plays per user/IP per day """
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'content_type', 'object_id', 'date'],
                 name='unique_play_per_user_per_day',
-                condition=~models.Q(user=None)  # vincolo solo se user è valorizzato
+                condition=~models.Q(user=None)  # ~ means "not", so this applies when user is not None
             ),
             models.UniqueConstraint(
                 fields=['ip_address', 'content_type', 'object_id', 'date'],
                 name='unique_play_per_ip_per_day',
-                condition=models.Q(user=None)  # vincolo solo per anonimi
+                condition=models.Q(user=None)  # this applies only for anonymous users
             )
         ]

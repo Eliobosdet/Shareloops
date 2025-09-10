@@ -24,7 +24,7 @@ def get_ordered_loads(u=None):
     # Unisci e ordina per uploaded_at (decrescente)
     return caricamenti_ordinati
 
-def get_most_liked_loads(limit=5):
+def get_most_liked_loads(limit=3):
     from .models import Loop, SamplePack  # Import locale per evitare circular imports
     
     lista_modello1 = Loop.objects.all()

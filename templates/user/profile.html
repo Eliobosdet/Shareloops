@@ -327,14 +327,16 @@
     const previewImg = document.getElementById("imagePreview");
     const confirmBtn = document.getElementById("confirmUploadBtn");
     const form = document.getElementById("imageUploadForm");
-  
+    let modal = null;
+
     fileInput.addEventListener("change", function () {
       const file = this.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = function (e) {
           previewImg.src = e.target.result;
-          new bootstrap.Modal(document.getElementById('previewModal')).show();
+          modal = new bootstrap.Modal(document.getElementById('previewModal'));
+          modal.show();
         };
         reader.readAsDataURL(file);
       }
@@ -342,7 +344,7 @@
   
     confirmBtn.addEventListener("click", function () {
         console.log("Caricamento dell'immagine...");
-        form.submit();
+        modal.hide();
     });
 
 

@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 ### CBV ###
 
 class ProfileDetailView(DetailView):
+    """ Visualize and edit user profile """
     model = User
     template_name = 'user/profile.html'
     context_object_name = 'user'
@@ -40,56 +41,62 @@ class ProfileDetailView(DetailView):
         context['total_comments_received'] = profile.total_comments_received()
         context['total_downloads_received'] = profile.total_downloads_received()
         context['total_audioplays_received'] = profile.total_audioplays_received()
-        # ✅ Popola il form con l'istanza esistente
         context['profForm'] = ProfileUpdateForm(instance=profile)
-        context['loads'] = get_ordered_loads(self.object)
+        context['loads'] = get_ordered_loads(self.object)   # gets all uploads by this user
         return context
     
     def post(self, request, *args, **kwargs):
+        """ Handle profile update form submission """
         self.object = self.get_object()
 
         if not request.user.is_authenticated:
-            messages.error(request, "Devi essere loggato per modificare il profilo")
-            return redirect('login')  # o redirect alla pagina di login
+            messages.error(request, "You must be logged in to update your profile.")
+            return redirect('login')
 
         if self.object != request.user:
-            messages.error(request, "Non autorizzato")
+            messages.error(request, "Unauthorized access to profile edit.")
             return redirect('profile', pk=request.user.pk)
 
-        profile, created = UserProfile.objects.get_or_create(user=self.object)  # Aggiorna nome modello
+        profile, created = UserProfile.objects.get_or_create(user=self.object)  # gets profile
+        print(f"Current profile image: {profile.image.name if profile.image else 'None'}")
         old_image = profile.image 
         form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
 
         if form.is_valid():
             try:
-                # Elimina la vecchia immagine solo se diversa da quella default
-                if (old_image and 
-                    old_image.name != 'defaultProfileImage.jpg' and 
-                    os.path.exists(old_image.path)):
-                    os.remove(old_image.path)
+                profile, created = UserProfile.objects.get_or_create(user=self.object)
+
+                # Saves the old image name to delete it if a new one is uploaded
+                old_image = profile.image
+                profile._old_image = old_image # Store old image in a temporary attribute
                 
-                form.save()
-                messages.success(request, "Profilo aggiornato!")
-                return redirect('profile', pk=self.object.id)
+                form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+                
+                if form.is_valid():
+                    form.save()  # (custom save() function in ProfileUpdateForm)
+                    messages.success(request, "Profilo aggiornato!")
+                    return redirect('profile', pk=self.object.id)
                 
             except Exception as e:
-                messages.error(request, f"Errore: {str(e)}")
+                print(f"Error during profile update: {str(e)}")
+                messages.error(request, f"Error during profile update: {str(e)}")
         else:
-            messages.error(request, "Form non valido")
+            messages.error(request, "Invalid form")
+            print(f"Form errors: {form.errors}")
 
         context = self.get_context_data()
         context['profForm'] = form
         return self.render_to_response(context)
 
 class GenericDetailView(DetailView):
+    """ Generic detail view for Loop and SamplePack """
     template_name = 'uploadableitem_detail.html'
-
 
     def get_object(self):
         modeltype = self.kwargs.get('modeltype').lower()
         pk = self.kwargs.get('pk')
 
-        # Determina il modello in base al modeltype
+        # Select the model based on modeltype
         if modeltype == 'loop':
             model = Loop
         elif modeltype == 'samplepack':
@@ -97,7 +104,6 @@ class GenericDetailView(DetailView):
         else:
             raise ValueError("Modeltype non valido")
 
-        # Recupera l'oggetto
         return get_object_or_404(model, pk=pk)
 
     def get_context_data(self, **kwargs):
@@ -116,20 +122,13 @@ class GenericDetailView(DetailView):
         return context
 
 class LoopsListView(ListView):
+    """ List view for Loop objects """
     model = Loop
     template_name = 'loops.html'
     context_object_name = 'loops'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        
-        if self.request.user.is_authenticated:
-            context['liked_loops'] = self.request.user.likes_loop.all()
-        else:
-            context['liked_loops'] = []
-        return context
-
 class SamplePacksListView(ListView):
+    """ List view for SamplePack objects """
     model = SamplePack
     template_name = 'samplepacks.html'
     context_object_name = 'samplepacks'
@@ -137,11 +136,12 @@ class SamplePacksListView(ListView):
 ### FBV ###
 
 def home(request, *args, **kwargs):
+    """ Home page with search and filter functionality """
     tmp_name = "home.html"
     uploads = get_ordered_loads()
+    most_liked = get_most_liked_loads(3)
 
-    most_liked = get_most_liked_loads(limit=5)
-
+    # Process search and filter parameters
     cleaned_data = {
             'title': request.GET.get('title', ''),
             'tags': request.GET.getlist('tags'),
@@ -151,6 +151,8 @@ def home(request, *args, **kwargs):
             'genre': request.GET.get('genre'),
             'upload_type': request.GET.get('upload_type', '')
     }
+
+    # unquote_plus is for decoding URL-encoded strings and converting '+' to spaces
 
     title = cleaned_data.get('title')
     if title:
@@ -198,7 +200,9 @@ def home(request, *args, **kwargs):
 
     return render(request, tmp_name, context)
 
+
 def register_view(request, *args, **kwargs):
+    """ User registration view """
     if request.method == 'POST':
         form = CustomRegisterForm(request.POST)
         if form.is_valid():
@@ -209,6 +213,7 @@ def register_view(request, *args, **kwargs):
     return render(request, 'auth/register.html', {'form': form})
 
 def login_view(request, *args, **kwargs):
+    """ User login view """
     if request.method == 'POST':
         form = CustomLoginForm(request, data=request.POST)
         if form.is_valid():
@@ -227,11 +232,13 @@ def login_view(request, *args, **kwargs):
 
 
 def logout_view(request, *args, **kwargs):
+    """ User logout view """
     logout(request)
     return redirect('home')
 
 @login_required
 def change_password(request, pk):
+    """ Change password view for users. """
     if request.method == "POST":
         form = PasswordChangeForm(user=request.user, data=request.POST)
         if form.is_valid():
@@ -252,6 +259,7 @@ def change_password(request, pk):
 @login_required
 @require_POST
 def remove_profile_image(request, pk=None):
+    """ Remove profile image and set to default """
     profile = request.user.userprofile
     profile.image.delete(save=False)  # elimina il file fisico
     profile.image = 'defaultProfileImage.jpg'  # imposta l'immagine predefinita
@@ -260,10 +268,12 @@ def remove_profile_image(request, pk=None):
 
 @login_required
 def upload(request):
-    return render(request, 'user/upload.html')        
+    """ Upload view for users. """
+    return render(request, 'user/upload.html')
 
 @login_required
 def upload_loop(request):
+    """ Upload loop view for users. """
     if request.method == 'POST':
 
         post_data, new_tags = process_tags_from_request(request)
@@ -293,6 +303,7 @@ def upload_loop(request):
 
 @login_required
 def upload_samplepack(request):
+    """ Upload samplepack view for users. """
     if request.method == 'POST':
         print(f"🔍 ALL POST data: {dict(request.POST)}")
 
@@ -325,6 +336,7 @@ def upload_samplepack(request):
 
 @login_required
 def edit_uploadable(request, pk, modeltype):
+    """ Edit uploadable item (Loop or SamplePack) view for users. """
     template = 'user/edit_uploadable.html'
 
     if modeltype == 'Loop':
@@ -349,6 +361,9 @@ def edit_uploadable(request, pk, modeltype):
 
         form = form_class(post_data, request.FILES, instance=obj)
         if form.is_valid():
+
+            print("files:", request.FILES)
+
             upd_obj = form.save(commit=False)
             upd_obj.save()
 
@@ -371,6 +386,7 @@ def edit_uploadable(request, pk, modeltype):
 @login_required
 @require_POST
 def delete_uploadable(request, pk, modeltype):
+    """ Delete uploadable item (Loop or SamplePack) view for users. """
     if modeltype == 'Loop':
         load = get_object_or_404(Loop, pk=pk, user=request.user)
     elif modeltype == 'SamplePack':
@@ -385,6 +401,7 @@ def delete_uploadable(request, pk, modeltype):
 
 @login_required
 def like_uploadable(request, modeltype, pk):
+    """ Like or unlike an uploadable item (Loop or SamplePack) """
     if request.method == "POST":
         # Recupera il modello dinamicamente
         try:
@@ -417,6 +434,7 @@ def like_uploadable(request, modeltype, pk):
 
 @login_required
 def like_comment(request, comment_id):
+    """ Like or unlike a comment """
     if request.method == "POST":
         comment = get_object_or_404(Comment, id=comment_id)
         user = request.user
@@ -438,6 +456,7 @@ def like_comment(request, comment_id):
 @login_required
 @require_POST  
 def add_comment(request, pk, modeltype, parent_id=None):
+    """ Add a comment to an uploadable item (Loop or SamplePack) """
     if request.method == 'POST':
         form = CommentForm(request.POST)
         if form.is_valid():
@@ -458,6 +477,7 @@ def add_comment(request, pk, modeltype, parent_id=None):
 @login_required
 @require_POST  
 def delete_comment(request, pk, modtype, upl_pk):
+    """ Delete a comment """
     comment = get_object_or_404(Comment, pk=pk)
     if request.user == comment.user:
         comment.delete()
@@ -468,6 +488,7 @@ def delete_comment(request, pk, modtype, upl_pk):
 
 @login_required
 def audio_file_download(request, pk):
+    """ Download an audio file for a loop """
     content_type = ContentType.objects.get(model='loop')
     item = get_object_or_404(content_type.model_class(), pk=pk)
 
@@ -487,6 +508,7 @@ def audio_file_download(request, pk):
 
 @login_required
 def zip_file_download(request, pk):
+    """ Download a zip file for a sample pack """
     item = get_object_or_404(SamplePack, pk=pk)
 
     # Registra il download se non è l'autore
@@ -504,6 +526,7 @@ def zip_file_download(request, pk):
     return response
 
 def track_audio_play(request, modeltype, pk):
+    """ Track audio play for Loop or SamplePack """
     # Recupera il modello dinamico
     content_type = ContentType.objects.get(model=modeltype.lower())
     item = get_object_or_404(content_type.model_class(), pk=pk)

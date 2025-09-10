@@ -46,5 +46,4 @@ urlpatterns = [
     path('loop/<int:pk>/audiodownload/', views.audio_file_download, name='audio_file_download'),
     path('samplepack/<int:pk>/zipdownload/', views.zip_file_download, name='zip_file_download'),
     path('<str:modeltype>/<int:pk>/track_play/', views.track_audio_play, name='track_audio_play'),
-    # path('loop/<int:loop_id>/track_download/', views.track_audio_download, name='track_audio_download')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
