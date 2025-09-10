@@ -149,7 +149,8 @@ def home(request, *args, **kwargs):
             'bpm_min': request.GET.get('bpm_min'),
             'bpm_max': request.GET.get('bpm_max'),
             'genre': request.GET.get('genre'),
-            'upload_type': request.GET.get('upload_type', '')
+            'upload_type': request.GET.get('upload_type', ''),
+            'uploaded_by': request.GET.get('uploaded_by', '')
     }
 
     # unquote_plus is for decoding URL-encoded strings and converting '+' to spaces
@@ -170,7 +171,11 @@ def home(request, *args, **kwargs):
     key = cleaned_data.get('key')
     if key and key != '':
         key_decoded = unquote_plus(key)
-        uploads = [upload for upload in uploads if str(upload['obj'].key) == str(key_decoded)]
+        uploads = [
+            upload for upload in uploads
+            if upload['modeltype'].lower() == 'loop'
+            and str(upload['obj'].key) == str(key_decoded)
+        ]
 
     bpm_min = cleaned_data.get('bpm_min')
     bpm_max = cleaned_data.get('bpm_max')
@@ -190,7 +195,11 @@ def home(request, *args, **kwargs):
 
     upload_type = cleaned_data.get('upload_type')
     if upload_type and upload_type != '':
-        uploads = [upload for upload in uploads if upload['type'].lower() == upload_type.lower()]
+        uploads = [upload for upload in uploads if upload['modeltype'].lower() == upload_type.lower()]
+
+    uploaded_by = cleaned_data.get('uploaded_by')
+    if uploaded_by and uploaded_by != '':
+        uploads = [upload for upload in uploads if str(upload['obj'].user.id) == str(uploaded_by)]
 
     context = {
         'uploads': uploads,
