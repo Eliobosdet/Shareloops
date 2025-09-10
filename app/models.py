@@ -140,11 +140,15 @@ class Loop(UploadableItem):
     time_signature_den = models.PositiveIntegerField(blank=True, null=True, default=4)
 
     def save(self, *args, **kwargs):
+    # Salva sempre l'oggetto, così ottiene una PK
+        super().save(*args, **kwargs)
+
+        # Se cover_image è temporanea, sposta il file e risalva
         if self.cover_image and 'temp/' in self.cover_image.path:
-            # Move the image to the correct folder
             new_path = loop_cover_upload_path(self, os.path.basename(self.cover_image.name))
-            self.cover_image.name = new_path
-            super().save(*args, **kwargs)
+            if self.cover_image.name != new_path:
+                self.cover_image.name = new_path
+                super().save(update_fields=['cover_image'])
 
     @property
     def download_count(self):
