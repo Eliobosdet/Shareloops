@@ -50,11 +50,9 @@ Built with **Django**, it provides a comprehensive ecosystem for the music produ
 ---
 
 ## 📋 Requirements
-
 - Python **3.13+**
-- Django **5.2+**
-- [Pipenv](https://pipenv.pypa.io/en/latest/) (recommended) or `pip`
-- Modern web browser with HTML5 audio support
+- Virtualenv (consigliato)
+- Libmagic (per Windows installare `python-magic-bin`)
 
 ---
 
@@ -65,18 +63,53 @@ Built with **Django**, it provides a comprehensive ecosystem for the music produ
    git clone https://github.com/Eliobosdet/shareloops.git
    cd shareloops
 
-2. **Install dependencies**
+2. **Set up the environment
    ```bash
-   pipenv install  # or pip install -r requirements.txt
+   # Create the environment
+   python -m venv venv
+   
+   # Activate it
+   # Windows:
+   .\venv\Scripts\activate
+   # Mac/Linux:
+   source venv/bin/activate
 
-3. **Database setup**
+3. **Install dependencies**
    ```bash
+   pip install -r requirements.txt
+
+4. **Configure Environment Variables**
+   ```bash
+   cp .env.example .env
+   # On Windows PowerShell: copy .env.example .env
+
+5. **Database Initialization**
+   ```bash
+   python manage.py makemigrations
    python manage.py migrate
 
-4. **Run development server**
+6. **Create a Superuser (Admin Access)**
+   ```bash
+   python manage.py createsuperuser
+   
+7. **Run development server**
    ```bash
    python manage.py runserver
 
-5. **Visit the app**
+8. **Visit the app**
    ```bash
    Open http://localhost:8000 in your browser.
+
+## 🛡️ Security & Best Practices
+- Environment Isolation: Sensitive keys and debug settings are managed via .env files and never committed to version control.
+
+- Dependency Management: A clean requirements.txt is provided for reproducible builds.
+
+- Git Discipline: Optimized .gitignore to exclude environment folders, databases, and temporary caches.
+
+## 📄 License
+Distributed under the MIT License. See LICENSE for more information.
+
+Author: [Elio]
+
+Project Link: https://github.com/Eliobosdet/shareloops
