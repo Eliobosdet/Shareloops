@@ -1,1 +1,29 @@
+# Python - Builded files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Env
+venv/
+env/
+ENV/
+
+# Database (I recruiter devono crearsi il proprio)
+db.sqlite3
+db.sqlite3-journal
+
+# Env variables
+.env
+
+# Media e Static
+media/
+staticfiles/
+
+# IDE e OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# old mockup
 mockup/
