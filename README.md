@@ -62,7 +62,7 @@ Built with **Django**, it provides a comprehensive ecosystem for the music produ
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/tuo-username/shareloops.git
+   git clone https://github.com/Eliobosdet/shareloops.git
    cd shareloops
 
 2. **Install dependencies**
